@@ -42,7 +42,7 @@ def create_placeholder_sprites(output_dir: Path) -> None:
                 fill="black",
             )
             draw.ellipse(
-                [73 + offset, 60, 78 - offset, 65],
+                [73, 60, 78, 65],
                 fill="black",
             )
 

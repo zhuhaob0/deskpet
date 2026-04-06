@@ -133,7 +133,14 @@ class DeskPetApp:
         )
 
     def _setup_overlay(self) -> None:
-        self.overlay = PetOverlay(on_double_click=self._on_pet_double_click)
+        import platform
+        system = platform.system().lower()
+        if system == "windows":
+            from deskpet.pet.overlay_win import WindowsOverlay
+            self.overlay = WindowsOverlay(on_double_click=self._on_pet_double_click)
+        else:
+            from deskpet.pet.overlay_console import ConsoleOverlay
+            self.overlay = ConsoleOverlay(on_double_click=self._on_pet_double_click)
 
     def _setup_tray(self) -> None:
         icon_path = str(self.resource_dir / "icon.png")
