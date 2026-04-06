@@ -21,8 +21,7 @@ A customizable desktop pet application for Windows. Run applications on your des
 ## Installation
 
 ```bash
-pip install PyQt6 pystray Pillow
-pip install -e .
+pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -e ".[dev]"
 ```
 
 ## Usage
