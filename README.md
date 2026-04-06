@@ -13,28 +13,41 @@ A customizable desktop pet application for Windows. Run applications on your des
 ## Requirements
 
 - Python 3.10+
-- Windows OS
+- Windows OS (for full functionality)
 - PyQt6 (for transparent overlay window)
-- pystray (for system tray)
+- pystray (for system tray, Windows/Linux)
 - Pillow (for image handling)
 
 ## Installation
 
 ```bash
+pip install PyQt6 pystray Pillow
 pip install -e .
 ```
 
 ## Usage
 
+### Windows
+
 ```bash
 deskpet
 ```
 
-Or run directly:
+### Linux (Console Mode)
+
+On Linux without GTK/pystray, the app runs in console mode:
 
 ```bash
 python -m deskpet.main
 ```
+
+Available commands:
+- `walk` - Random walk
+- `sleep` - Sleep for 8s
+- `eat` - Eat for 3s
+- `play` - Play for 6s
+- `status` - Show pet status
+- `quit` - Exit
 
 ## Project Structure
 
