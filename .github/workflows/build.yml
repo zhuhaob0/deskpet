@@ -27,20 +27,15 @@ jobs:
           pip install -i https://pypi.tuna.tsinghua.edu.cn/simple pyinstaller
           
       - name: Build executable
-        run: |
-          pyinstaller deskpet.spec --clean
-          dir dist
+        run: pyinstaller deskpet.spec --clean
+
+      - name: Show dist contents
+        run: Get-ChildItem -Path dist -Recurse | Format-Table Name, Length
 
       - name: Create ZIP
         run: |
-          if (Test-Path "dist\DeskPet\DeskPet.exe") {
-            Compress-Archive -Path "dist\DeskPet" -DestinationPath "DeskPet-win64.zip"
-          } elseif (Test-Path "dist\DeskPet.exe") {
-            Compress-Archive -Path "dist\DeskPet.exe" -DestinationPath "DeskPet-win64.zip"
-          } else {
-            Get-ChildItem dist
-            throw "Cannot find DeskPet executable"
-          }
+          $item = Get-ChildItem dist | Select-Object -First 1
+          Compress-Archive -Path "dist\$($item.Name)" -DestinationPath "DeskPet-win64.zip"
           
       - name: Upload artifact
         uses: actions/upload-artifact@v4
