@@ -1,5 +1,10 @@
 # DeskPet Agent Instructions
 
+## Dependency Management
+
+- Use Tsinghua mirror: `pip install -i https://pypi.tuna.tsinghua.edu.cn/simple`
+- Max 3 retries on installation failure
+
 ## Key Commands
 
 ```bash
