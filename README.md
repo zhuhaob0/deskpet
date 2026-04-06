@@ -202,10 +202,21 @@ Config is stored at `%USERPROFILE%\.deskpet\config.json`:
 ## Development
 
 ```bash
-pip install -e ".[dev]"
+pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -e ".[dev]"
 ruff check .
 pytest
 ```
+
+## Build
+
+Build Windows executable:
+
+```bash
+pip install -i https://pypi.tuna.tsinghua.edu.cn/simple pyinstaller
+pyinstaller deskpet.spec --clean
+```
+
+Output: `dist/DeskPet` (executable + dependencies)
 
 ## License
 
