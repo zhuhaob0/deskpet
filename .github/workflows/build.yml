@@ -23,19 +23,26 @@ jobs:
           
       - name: Install dependencies
         run: |
-          pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -e ".[dev]"
-          pip install -i https://pypi.tuna.tsinghua.edu.cn/simple pyinstaller
+          pip install -e ".[dev]"
+          pip install pyinstaller
           
       - name: Build executable
-        run: pyinstaller deskpet.spec --clean
-
-      - name: Show dist contents
-        run: Get-ChildItem -Path dist -Recurse | Format-Table Name, Length
+        run: |
+          pyinstaller deskpet.spec --clean 2>&1
+          echo "=== After build ==="
+          if (Test-Path "dist") { Get-ChildItem -Path dist -Recurse } else { echo "dist folder not found" }
 
       - name: Create ZIP
         run: |
-          $item = Get-ChildItem dist | Select-Object -First 1
-          Compress-Archive -Path "dist\$($item.Name)" -DestinationPath "DeskPet-win64.zip"
+          $exe = Get-ChildItem -Path . -Filter "*.exe" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+          if ($exe) {
+            Write-Host "Found exe: $($exe.FullName)"
+            $parent = $exe.DirectoryName
+            Compress-Archive -Path "$parent\*" -DestinationPath "DeskPet-win64.zip"
+          } else {
+            Write-Host "No exe found"
+            throw "Cannot find DeskPet executable"
+          }
           
       - name: Upload artifact
         uses: actions/upload-artifact@v4
