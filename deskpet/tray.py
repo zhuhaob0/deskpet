@@ -33,6 +33,21 @@ def _check_pystray():
         return False
 
 
+def _is_gui_available():
+    """Check if GUI environment is available."""
+    import os
+
+    if os.name == "nt":
+        try:
+            import ctypes
+
+            user32 = ctypes.windll.user32
+            return user32.GetSystemMetrics(0) > 0 and user32.GetSystemMetrics(1) > 0
+        except Exception:
+            return False
+    return True
+
+
 class TrayManager:
     def __init__(
         self,
@@ -63,6 +78,13 @@ class TrayManager:
 
     def run(self) -> None:
         logger.info("TrayManager.run() starting...")
+
+        # Check if GUI is available, if not use console mode
+        if not _is_gui_available():
+            logger.warning("No GUI environment detected, using console mode")
+            self._run_console_mode()
+            return
+
         if not _check_pystray():
             logger.warning("System tray not available, using console mode")
             self._run_console_mode()

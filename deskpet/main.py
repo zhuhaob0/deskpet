@@ -38,9 +38,12 @@ def setup_logging() -> None:
     log_file = log_dir / "deskpet.log"
 
     logging.basicConfig(
-        level=logging.DEBUG,
+        level=logging.INFO,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
+
+    # Set PIL logging to WARNING to reduce noise
+    logging.getLogger("PIL").setLevel(logging.WARNING)
 
     file_handler = logging.FileHandler(log_file, encoding="utf-8")
     file_handler.setLevel(logging.DEBUG)
