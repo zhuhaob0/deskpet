@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import sys
 import threading
 import time
@@ -21,10 +22,37 @@ from deskpet.tray import TrayManager
 if TYPE_CHECKING:
     from deskpet.ui import ChatDialog
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
+
+def get_log_dir() -> Path:
+    if getattr(sys, "frozen", False):
+        base = Path(os.environ.get("LOCALAPPDATA", str(Path.home())))
+    else:
+        base = Path.home()
+    log_dir = base / ".deskpet" / "logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    return log_dir
+
+
+def setup_logging() -> None:
+    log_dir = get_log_dir()
+    log_file = log_dir / "deskpet.log"
+
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    )
+
+    file_handler = logging.FileHandler(log_file, encoding="utf-8")
+    file_handler.setLevel(logging.DEBUG)
+    file_handler.setFormatter(
+        logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    )
+
+    logging.getLogger().addHandler(file_handler)
+
+    logging.info(f"Log file: {log_file}")
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -37,6 +65,7 @@ def get_resource_dir() -> Path:
 def get_screen_size() -> tuple[int, int]:
     try:
         import ctypes
+
         user32 = ctypes.windll.user32
         return user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
     except Exception:
@@ -134,12 +163,15 @@ class DeskPetApp:
 
     def _setup_overlay(self) -> None:
         import platform
+
         system = platform.system().lower()
         if system == "windows":
             from deskpet.pet.overlay_win import WindowsOverlay
+
             self.overlay = WindowsOverlay(on_double_click=self._on_pet_double_click)
         else:
             from deskpet.pet.overlay_console import ConsoleOverlay
+
             self.overlay = ConsoleOverlay(on_double_click=self._on_pet_double_click)
 
     def _setup_tray(self) -> None:
@@ -231,12 +263,20 @@ class DeskPetApp:
 
 
 def main() -> None:
+    setup_logging()
+    logger.info("DeskPet starting...")
+
     try:
         app = DeskPetApp()
         app.initialize()
         app.run()
     except Exception as e:
+        import traceback
+
         logger.exception("Fatal error in main")
+        print(f"Fatal error: {e}", file=sys.stderr)
+        print(traceback.format_exc(), file=sys.stderr)
+        input("Press Enter to exit...")  # 等待用户查看错误
         sys.exit(1)
 
 
