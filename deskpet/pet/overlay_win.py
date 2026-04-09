@@ -31,8 +31,8 @@ class TransparentWindow(QWidget):
 
 
 class WindowsOverlay(PetOverlay):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, on_double_click=None):
+        super().__init__(on_double_click)
         self._app = None
         self._window: TransparentWindow | None = None
 
@@ -45,7 +45,9 @@ class WindowsOverlay(PetOverlay):
 
         if self._window is None:
             self._window = TransparentWindow()
-            self._window.mouseDoubleClickEvent = lambda e: self.on_double_click and self.on_double_click()
+            self._window.mouseDoubleClickEvent = lambda e: (
+                self.on_double_click and self.on_double_click()
+            )
 
         self._window.set_pixmap(sprite_path)
         self._window.move(QPoint(position[0], position[1]))
