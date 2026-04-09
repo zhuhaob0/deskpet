@@ -35,6 +35,39 @@ def _check_pystray():
 
 def _is_gui_available():
     """Check if GUI environment is available."""
+    import platform
+    import os
+
+    # Windows Server editions don't have GUI by default
+    if os.name == "nt":
+        version = platform.version().lower()
+        if "server" in version or "windows server" in platform.platform().lower():
+            logger.info("Windows Server detected, GUI may not be available")
+            return False
+        try:
+            import ctypes
+
+            user32 = ctypes.windll.user32
+            return user32.GetSystemMetrics(0) > 0 and user32.GetSystemMetrics(1) > 0
+        except Exception as e:
+            logger.warning(f"GUI check failed: {e}")
+            return False
+    return True
+    try:
+        import pystray as _pyst
+        from PIL import Image
+
+        globals()["pystray"] = _pyst
+        globals()["Image"] = Image
+        _pystray_available = True
+        return True
+    except (ImportError, ValueError, Exception) as e:
+        logger.warning(f"pystray not available: {e}")
+        return False
+
+
+def _is_gui_available():
+    """Check if GUI environment is available."""
     import os
 
     if os.name == "nt":
@@ -103,8 +136,37 @@ class TrayManager:
 
         self._icon = pystray.Icon("deskpet", image, self.tooltip, menu)
         logger.info("Starting pystray...")
-        self._icon.run()
-        logger.info("pystray.run() returned")
+
+        # Run pystray in a thread with timeout
+        import threading
+
+        pystray_started = threading.Event()
+        pystray_error = [None]
+
+        def run_pystray():
+            try:
+                self._icon.run()
+            except Exception as e:
+                pystray_error[0] = e
+            finally:
+                pystray_started.set()
+
+        pystray_thread = threading.Thread(target=run_pystray, daemon=True)
+        pystray_thread.start()
+
+        # Wait for pystray to start, with 5 second timeout
+        if not pystray_started.wait(timeout=5):
+            logger.warning("pystray failed to start within 5 seconds, using console mode")
+            self._icon.stop()
+            self._run_console_mode()
+            return
+
+        if pystray_error[0]:
+            logger.warning(f"pystray error: {pystray_error[0]}, using console mode")
+            self._run_console_mode()
+            return
+
+        logger.info("pystray is running")
 
     def _run_console_mode(self) -> None:
         print(f"\n{'=' * 50}")
