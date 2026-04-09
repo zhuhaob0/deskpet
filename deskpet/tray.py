@@ -23,8 +23,9 @@ def _check_pystray():
     try:
         import pystray as _pyst
         from PIL import Image
-        globals()['pystray'] = _pyst
-        globals()['Image'] = Image
+
+        globals()["pystray"] = _pyst
+        globals()["Image"] = Image
         _pystray_available = True
         return True
     except (ImportError, ValueError, Exception) as e:
@@ -61,26 +62,32 @@ class TrayManager:
         self._pet_types = pet_types
 
     def run(self) -> None:
+        logger.info("TrayManager.run() starting...")
         if not _check_pystray():
-            logger.warning("System tray not available on this platform")
+            logger.warning("System tray not available, using console mode")
             self._run_console_mode()
             return
 
+        logger.info(f"Loading tray icon from: {self.icon_path}")
         menu_items = self._build_menu()
         menu = pystray.Menu(*menu_items)
 
         try:
             image = Image.open(self.icon_path)
+            logger.info("Tray icon loaded successfully")
         except FileNotFoundError:
+            logger.warning(f"Icon not found: {self.icon_path}, using default")
             image = Image.new("RGB", (64, 64), color="white")
 
         self._icon = pystray.Icon("deskpet", image, self.tooltip, menu)
+        logger.info("Starting pystray...")
         self._icon.run()
+        logger.info("pystray.run() returned")
 
     def _run_console_mode(self) -> None:
-        print(f"\n{'='*50}")
+        print(f"\n{'=' * 50}")
         print(f"DeskPet Console Mode (pystray not available)")
-        print(f"{'='*50}")
+        print(f"{'=' * 50}")
         print(f"Pet: {self._pet_types[0] if self._pet_types else 'default'}")
         print(f"\nCommands:")
         print(f"  walk    - Random walk")
@@ -89,7 +96,7 @@ class TrayManager:
         print(f"  play    - Play for 6s")
         print(f"  status  - Show pet status")
         print(f"  quit    - Exit")
-        print(f"{'='*50}\n")
+        print(f"{'=' * 50}\n")
 
         while True:
             try:
@@ -175,6 +182,7 @@ class TrayManager:
                 threading.Thread(target=cmd[0], daemon=True).start()
             else:
                 from deskpet.pet.engine import Behavior
+
                 self._pet_engine.command(Behavior[behavior_name.upper()], cmd[1])
 
     def _switch_pet(self, pet_type: str) -> None:

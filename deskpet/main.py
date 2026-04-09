@@ -234,14 +234,17 @@ class DeskPetApp:
             time.sleep(frame_time)
 
     def run(self) -> None:
+        logger.info("DeskPet.run() starting...")
         self._running = True
 
         self._update_thread = threading.Thread(target=self._update_loop, daemon=True)
         self._update_thread.start()
+        logger.info("Update thread started")
 
-        logger.info("DeskPet started")
+        logger.info("Starting tray...")
         if self.tray:
             self.tray.run()
+        logger.info("Tray.run() returned")
 
     def quit(self) -> None:
         logger.info("Shutting down DeskPet")
