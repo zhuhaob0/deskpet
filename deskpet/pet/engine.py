@@ -264,5 +264,12 @@ class PetEngine:
         self.bounds.width = width
         self.bounds.height = height
 
+    def set_position(self, x: int, y: int) -> None:
+        with self._lock:
+            self.state.position_x = x
+            self.state.position_y = y
+            self.state.target_x = x
+            self.state.target_y = y
+
     def get_state(self) -> PetState:
         return self.state

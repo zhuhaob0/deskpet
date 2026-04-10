@@ -7,8 +7,13 @@ from typing import Callable
 
 
 class PetOverlay:
-    def __init__(self, on_double_click: Callable[[], None] | None = None):
+    def __init__(
+        self,
+        on_double_click: Callable[[], None] | None = None,
+        on_position_changed: Callable[[int, int], None] | None = None,
+    ):
         self.on_double_click = on_double_click
+        self._on_position_changed = on_position_changed
         self._window = None
 
     def show(self, sprite_path: str, position: tuple[int, int]) -> None:
@@ -29,5 +34,6 @@ class PetOverlay:
     def create(platform: str = "windows") -> PetOverlay:
         if platform == "windows":
             from deskpet.pet.overlay_win import WindowsOverlay
+
             return WindowsOverlay()
         raise NotImplementedError(f"Platform {platform} not supported")

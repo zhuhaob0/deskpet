@@ -13,9 +13,10 @@ logger = logging.getLogger(__name__)
 
 
 class TransparentWindow(QWidget):
-    def __init__(self, on_double_click=None):
+    def __init__(self, on_double_click=None, on_position_changed=None):
         super().__init__()
         self._on_double_click = on_double_click
+        self._on_position_changed = on_position_changed
         self._drag_start = None
         self._is_dragging = False
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
@@ -63,6 +64,8 @@ class TransparentWindow(QWidget):
             self._drag_start = event.globalPosition().toPoint()
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+        if self._on_position_changed:
+            self._on_position_changed(self.pos().x(), self.pos().y())
         self._drag_start = None
         self._is_dragging = False
         event.accept()
@@ -74,10 +77,11 @@ class TransparentWindow(QWidget):
 
 
 class WindowsOverlay(PetOverlay):
-    def __init__(self, on_double_click=None):
+    def __init__(self, on_double_click=None, on_position_changed=None):
         super().__init__(on_double_click)
         self._app = None
         self._window: TransparentWindow | None = None
+        self._on_position_changed = on_position_changed
 
     def show(self, sprite_path: str, position: tuple[int, int]) -> None:
         from PyQt6.QtWidgets import QApplication
@@ -96,7 +100,9 @@ class WindowsOverlay(PetOverlay):
                 self._app = QApplication.instance()
 
         if self._window is None:
-            self._window = TransparentWindow(on_double_click=self.on_double_click)
+            self._window = TransparentWindow(
+                on_double_click=self.on_double_click, on_position_changed=self._on_position_changed
+            )
 
         self._window.set_pixmap(sprite_path)
         self._window.move(QPoint(position[0], position[1]))

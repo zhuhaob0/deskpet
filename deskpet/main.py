@@ -189,7 +189,10 @@ class DeskPetApp:
             logger.info(f"QApplication initialized: {self._qapp}")
             from deskpet.pet.overlay_win import WindowsOverlay
 
-            self.overlay = WindowsOverlay(on_double_click=self._on_pet_double_click)
+            self.overlay = WindowsOverlay(
+                on_double_click=self._on_pet_double_click,
+                on_position_changed=self._on_pet_position_changed,
+            )
         else:
             from deskpet.pet.overlay_console import ConsoleOverlay
 
@@ -211,6 +214,10 @@ class DeskPetApp:
         logger.info("Pet double-clicked - opening chat")
         if self.chat_controller:
             self.chat_controller.open()
+
+    def _on_pet_position_changed(self, x: int, y: int) -> None:
+        if self.pet_engine:
+            self.pet_engine.set_position(x, y)
 
     def _switch_pet(self, pet_type: str) -> None:
         logger.info(f"Switching to pet type: {pet_type}")
