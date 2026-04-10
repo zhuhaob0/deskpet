@@ -17,11 +17,11 @@ class WalkCommand(Command):
             return CommandResult(False, "Pet engine not available")
 
         if not args:
-            pet_engine.walk_random()
+            pet_engine.command(Behavior.WALK, 0.0)
             return CommandResult(True, "Walking to a random position...")
 
         if args[0].lower() == "random":
-            pet_engine.walk_random()
+            pet_engine.command(Behavior.WALK, 0.0)
             return CommandResult(True, "Walking to a random position...")
 
         if len(args) >= 2:
@@ -166,15 +166,19 @@ class ConfigCommand(Command):
 
         if setting in config_commands:
             attr, type_fn = config_commands[setting]
-            return CommandResult(True, f"Config '{setting}' set to '{value}' (config not persisted yet)")
+            return CommandResult(
+                True, f"Config '{setting}' set to '{value}' (config not persisted yet)"
+            )
 
         return CommandResult(False, f"Unknown setting: {setting}")
 
 
 def get_command_registry():
     from deskpet.commands.base import _default_registry
+
     if _default_registry is None:
         from deskpet.commands.base import CommandRegistry
+
         _default_registry = CommandRegistry()
         _register_builtin_commands(_default_registry)
     return _default_registry

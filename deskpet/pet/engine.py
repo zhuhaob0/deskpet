@@ -119,17 +119,25 @@ class PetEngine:
     def stop(self) -> None:
         self._running = False
 
-    def _set_behavior(self, behavior: Behavior, duration: float = 0.0) -> None:
-        with self._lock:
-            old_behavior = self.state.behavior
-            self.state.update_behavior(behavior, duration)
-            logger.info(
-                f"Behavior changed: {old_behavior.name} -> {behavior.name} (duration={duration}s)"
-            )
-            if behavior == Behavior.WALK and duration == 0:
-                self._set_walk_target()
-            if self._on_behavior_change:
-                self._on_behavior_change(behavior)
+    def _set_behavior(
+        self, behavior: Behavior, duration: float = 0.0, lock_held: bool = False
+    ) -> None:
+        if lock_held:
+            self._do_set_behavior(behavior, duration)
+        else:
+            with self._lock:
+                self._do_set_behavior(behavior, duration)
+
+    def _do_set_behavior(self, behavior: Behavior, duration: float = 0.0) -> None:
+        old_behavior = self.state.behavior
+        self.state.update_behavior(behavior, duration)
+        logger.info(
+            f"Behavior changed: {old_behavior.name} -> {behavior.name} (duration={duration}s)"
+        )
+        if behavior == Behavior.WALK and duration == 0:
+            self._set_walk_target()
+        if self._on_behavior_change:
+            self._on_behavior_change(behavior)
 
     def command(self, behavior: Behavior, duration: float = 0.0) -> None:
         if not self._running:
@@ -144,7 +152,7 @@ class PetEngine:
             self.state.target_y = max(
                 self.bounds.margin, min(y, self.bounds.height - self.bounds.margin)
             )
-            self._set_behavior(Behavior.WALK, self.config.walk_duration)
+            self._set_behavior(Behavior.WALK, self.config.walk_duration, lock_held=True)
 
     def walk_random(self) -> None:
         import random
