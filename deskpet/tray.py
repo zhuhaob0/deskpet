@@ -162,22 +162,16 @@ class TrayManager:
 
         from deskpet.pet.engine import Behavior
 
-        behavior_map = {
-            "walk": ("walk", 0.0),
-            "sleep": ("sleep", 8.0),
-            "eat": ("eat", 3.0),
-            "play": ("play", 6.0),
-        }
-
-        if behavior_name in behavior_map:
-            cmd = behavior_map[behavior_name]
-            if behavior_name == "walk":
-                logger.info("Starting walk in thread")
-                threading.Thread(target=self._pet_engine.walk_random, daemon=True).start()
-            else:
-                logger.info(f"Sending command: {cmd[0]}, duration: {cmd[1]}")
-                self._pet_engine.command(Behavior[cmd[0].upper()], cmd[1])
-                logger.info("Command sent successfully")
+        if behavior_name == "walk":
+            logger.info("Sending walk command")
+            self._pet_engine.command(Behavior.WALK, 0.0)
+            logger.info("Walk command sent successfully")
+        elif behavior_name in ("sleep", "eat", "play"):
+            duration_map = {"sleep": 8.0, "eat": 3.0, "play": 6.0}
+            duration = duration_map.get(behavior_name, 5.0)
+            logger.info(f"Sending {behavior_name} command, duration: {duration}")
+            self._pet_engine.command(Behavior[behavior_name.upper()], duration)
+            logger.info(f"{behavior_name} command sent successfully")
 
     def _switch_pet(self, pet_type: str) -> None:
         logger.info(f"Switching to pet: {pet_type}")

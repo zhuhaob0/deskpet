@@ -152,6 +152,14 @@ class PetEngine:
         y = random.randint(self.bounds.margin, self.bounds.height - self.bounds.margin)
         self.walk_to(x, y)
 
+    def _set_walk_target(self) -> None:
+        import random
+
+        x = random.randint(self.bounds.margin, self.bounds.width - self.bounds.margin)
+        y = random.randint(self.bounds.margin, self.bounds.height - self.bounds.margin)
+        self.state.target_x = x
+        self.state.target_y = y
+
     def _process_command_queue(self) -> None:
         try:
             while not self._command_queue.empty():
@@ -190,6 +198,13 @@ class PetEngine:
         self.state.last_update = current_time
 
         self._process_command_queue()
+
+        if self.state.behavior == Behavior.WALK and self.state.behavior_duration == 0:
+            if (
+                self.state.target_x == self.state.position_x
+                and self.state.target_y == self.state.position_y
+            ):
+                self._set_walk_target()
 
         if self.state.is_behavior_complete() and self.state.behavior != Behavior.IDLE:
             self._set_behavior(Behavior.IDLE)

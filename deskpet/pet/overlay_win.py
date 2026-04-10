@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import logging
 from PyQt6.QtCore import Qt, QPoint
-from PyQt6.QtGui import QPixmap, QMouseEvent, QPainter, QPen, QColor
+from PyQt6.QtGui import QPixmap, QMouseEvent, QScreen
 from PyQt6.QtWidgets import QLabel, QWidget
 
 from deskpet.pet.overlay import PetOverlay
+
+logger = logging.getLogger(__name__)
 
 
 class TransparentWindow(QWidget):
@@ -15,21 +18,25 @@ class TransparentWindow(QWidget):
         self._on_double_click = on_double_click
         self._drag_start = None
         self._is_dragging = False
-        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-        self.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+        self.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground, True)
         self.setWindowFlags(
             Qt.WindowType.FramelessWindowHint
             | Qt.WindowType.Tool
             | Qt.WindowType.WindowStaysOnTopHint
             | Qt.WindowType.WindowDoesNotAcceptFocus
+            | Qt.WindowType.BypassWindowManagerHint
         )
         self.setFixedSize(128, 128)
         self.setMouseTracking(True)
+        self.setBackgroundRole(Qt.BackgroundRole.Transparent)
+
         self._label = QLabel(self)
         self._label.setFixedSize(128, 128)
         self._label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._label.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-        self._label.setStyleSheet("background: transparent;")
+        self._label.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+        self._label.setStyleSheet("QLabel { background-color: transparent; border: none; }")
+        self._label.setBackgroundRole(Qt.BackgroundRole.Transparent)
 
     def set_pixmap(self, path: str) -> None:
         pixmap = QPixmap(path)
@@ -42,11 +49,34 @@ class TransparentWindow(QWidget):
             )
             self._label.setPixmap(scaled)
 
+    def paintEvent(self, event) -> None:
+        painter = QPainter(self)
+        painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Clear)
+        painter.fillRect(self.rect(), Qt.GlobalColor.transparent)
+
     def mousePressEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
             self._drag_start = event.globalPosition().toPoint()
             self._is_dragging = True
             event.accept()
+
+    def mouseMoveEvent(self, event: QMouseEvent) -> None:
+        if self._is_dragging and self._drag_start:
+            delta = event.globalPosition().toPoint() - self._drag_start
+            new_pos = self.pos() + delta
+            self.move(new_pos)
+            self._drag_start = event.globalPosition().toPoint()
+
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+        if event.button() == Qt.MouseButton.LeftButton:
+            self._drag_start = None
+            self._is_dragging = False
+            event.accept()
+
+    def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
+        if event.button() == Qt.MouseButton.LeftButton and self._on_double_click:
+            self._on_double_click()
+        event.accept()
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         if self._is_dragging and self._drag_start:
