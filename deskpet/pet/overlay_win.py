@@ -41,7 +41,16 @@ class WindowsOverlay(PetOverlay):
         import sys
 
         if self._app is None:
-            self._app = QApplication(sys.argv)
+            try:
+                self._app = QApplication.instance()
+                if self._app is None:
+                    self._app = QApplication(sys.argv)
+                    logger = __import__("logging").getLogger(__name__)
+                    logger.info("Created new QApplication")
+            except RuntimeError as e:
+                logger = __import__("logging").getLogger(__name__)
+                logger.warning(f"QApplication already exists: {e}")
+                self._app = QApplication.instance()
 
         if self._window is None:
             self._window = TransparentWindow()

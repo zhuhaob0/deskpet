@@ -141,6 +141,7 @@ class DeskPetApp:
         self.overlay: PetOverlay | None = None
         self.tray: TrayManager | None = None
         self.chat_controller: ChatDialogController | None = None
+        self._qapp = None
         self._running = False
         self._update_thread: threading.Thread | None = None
 
@@ -172,9 +173,19 @@ class DeskPetApp:
 
     def _setup_overlay(self) -> None:
         import platform
+        import os
 
+        os.environ.setdefault("QT_QPA_PLATFORM", "windows")
         system = platform.system().lower()
         if system == "windows":
+            from PyQt6.QtWidgets import QApplication
+            import sys
+
+            logger.info("Initializing QApplication in main thread")
+            self._qapp = QApplication.instance()
+            if self._qapp is None:
+                self._qapp = QApplication(sys.argv)
+            logger.info(f"QApplication initialized: {self._qapp}")
             from deskpet.pet.overlay_win import WindowsOverlay
 
             self.overlay = WindowsOverlay(on_double_click=self._on_pet_double_click)
@@ -184,11 +195,12 @@ class DeskPetApp:
             self.overlay = ConsoleOverlay(on_double_click=self._on_pet_double_click)
 
     def _setup_tray(self) -> None:
-        icon_path = str(self.resource_dir / "icon.png")
+        icon_path = str(self.resource_dir / "pets" / "icon.png")
         self.tray = TrayManager(
             icon_path=icon_path,
             tooltip="DeskPet",
             on_quit=self.quit,
+            qapp=self._qapp,
         )
         self.tray.set_pet_engine(self.pet_engine)
         self.tray.set_on_switch_pet(self._switch_pet)
@@ -221,13 +233,21 @@ class DeskPetApp:
                 )
 
     def _update_loop(self, fps: float = 30.0) -> None:
+        logger.info("Update loop started")
         frame_time = 1.0 / fps
         last_sprite = ""
         last_position = (0, 0)
+        frame_count = 0
 
         while self._running:
             if self.pet_engine and self.overlay:
                 result = self.pet_engine.tick()
+                frame_count += 1
+
+                if frame_count % 100 == 0:
+                    logger.debug(
+                        f"Frame {frame_count}: sprite={result.sprite}, pos={result.position}"
+                    )
 
                 if result.sprite != last_sprite:
                     self.overlay.update_sprite(result.sprite)
@@ -238,7 +258,9 @@ class DeskPetApp:
                     last_position = result.position
 
                 if not self.overlay._window:
+                    logger.info("Creating overlay window")
                     self.overlay.show(result.sprite, result.position)
+                    logger.info("Overlay window created")
 
             time.sleep(frame_time)
 
