@@ -24,4 +24,7 @@ Thumbs.db
 
 # Config (local overrides)
 config.json
+
+# Logs
+log/
 *.log

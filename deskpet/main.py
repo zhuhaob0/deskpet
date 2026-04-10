@@ -25,16 +25,22 @@ if TYPE_CHECKING:
 
 def get_log_dir() -> Path:
     if getattr(sys, "frozen", False):
-        base = Path(os.environ.get("LOCALAPPDATA", str(Path.home())))
+        base = Path(sys._MEIPASS).parent
     else:
-        base = Path.home()
-    log_dir = base / ".deskpet" / "logs"
+        base = Path(__file__).parent.parent
+    log_dir = base / "log"
     log_dir.mkdir(parents=True, exist_ok=True)
     return log_dir
 
 
+def clear_log_dir(log_dir: Path) -> None:
+    for log_file in log_dir.glob("*.log"):
+        log_file.unlink(missing_ok=True)
+
+
 def setup_logging() -> None:
     log_dir = get_log_dir()
+    clear_log_dir(log_dir)
     log_file = log_dir / "deskpet.log"
 
     logging.basicConfig(
