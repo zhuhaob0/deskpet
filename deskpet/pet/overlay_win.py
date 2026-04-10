@@ -19,12 +19,15 @@ class TransparentWindow(QWidget):
             Qt.WindowType.FramelessWindowHint
             | Qt.WindowType.Tool
             | Qt.WindowType.WindowStaysOnTopHint
+            | Qt.WindowType.WindowDoesNotAcceptFocus
         )
         self.setFixedSize(128, 128)
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, False)
+        self.setStyleSheet("background: transparent; border: none;")
         self._label = QLabel(self)
         self._label.setFixedSize(128, 128)
         self._label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._label.setStyleSheet("background: transparent; border: none;")
 
     def set_pixmap(self, path: str) -> None:
         pixmap = QPixmap(path)
@@ -38,7 +41,7 @@ class TransparentWindow(QWidget):
             event.accept()
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
-        if event.buttons() & Qt.MouseButton.LeftButton and self._drag_start:
+        if self._drag_start:
             delta = event.globalPosition().toPoint() - self._drag_start
             new_pos = self.pos() + delta
             self.move(new_pos)
@@ -46,13 +49,13 @@ class TransparentWindow(QWidget):
             event.accept()
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
-        if event.button() == Qt.MouseButton.LeftButton:
-            self._drag_start = None
-            event.accept()
+        self._drag_start = None
+        event.accept()
 
     def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
         if self._on_double_click:
             self._on_double_click()
+        event.accept()
 
 
 class WindowsOverlay(PetOverlay):

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import random
 import time
 from dataclasses import dataclass, field
@@ -12,6 +13,8 @@ from typing import TYPE_CHECKING, Callable
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 
 class Behavior(Enum):
@@ -119,7 +122,11 @@ class PetEngine:
     def _set_behavior(self, behavior: Behavior, duration: float = 0.0) -> None:
         with self._lock:
             if self.state.behavior != behavior:
+                old_behavior = self.state.behavior
                 self.state.update_behavior(behavior, duration)
+                logger.info(
+                    f"Behavior changed: {old_behavior.name} -> {behavior.name} (duration={duration}s)"
+                )
                 if self._on_behavior_change:
                     self._on_behavior_change(behavior)
 
@@ -130,12 +137,17 @@ class PetEngine:
 
     def walk_to(self, x: int, y: int) -> None:
         with self._lock:
-            self.state.target_x = max(self.bounds.margin, min(x, self.bounds.width - self.bounds.margin))
-            self.state.target_y = max(self.bounds.margin, min(y, self.bounds.height - self.bounds.margin))
+            self.state.target_x = max(
+                self.bounds.margin, min(x, self.bounds.width - self.bounds.margin)
+            )
+            self.state.target_y = max(
+                self.bounds.margin, min(y, self.bounds.height - self.bounds.margin)
+            )
             self._set_behavior(Behavior.WALK, self.config.walk_duration)
 
     def walk_random(self) -> None:
         import random
+
         x = random.randint(self.bounds.margin, self.bounds.width - self.bounds.margin)
         y = random.randint(self.bounds.margin, self.bounds.height - self.bounds.margin)
         self.walk_to(x, y)
@@ -194,6 +206,11 @@ class PetEngine:
         frame = int(current_time / frame_duration) % self._get_frames_for_behavior(behavior)
 
         sprite = self.sprite_manager.get_sprite(behavior, frame)
+
+        if frame == 0:
+            logger.debug(
+                f"Behavior: {behavior.name}, Frame: {frame}, Sprite: {sprite}, Position: {self.state.position}"
+            )
 
         return TickResult(
             sprite=sprite,

@@ -155,7 +155,9 @@ class TrayManager:
         self._menu.addAction(quit_action)
 
     def _send_command(self, behavior_name: str) -> None:
+        logger.info(f"Command received: {behavior_name}")
         if self._pet_engine is None:
+            logger.warning("Pet engine not initialized")
             return
 
         from deskpet.pet.engine import Behavior
@@ -170,9 +172,12 @@ class TrayManager:
         if behavior_name in behavior_map:
             cmd = behavior_map[behavior_name]
             if behavior_name == "walk":
+                logger.info("Starting walk in thread")
                 threading.Thread(target=self._pet_engine.walk_random, daemon=True).start()
             else:
+                logger.info(f"Sending command: {cmd[0]}, duration: {cmd[1]}")
                 self._pet_engine.command(Behavior[cmd[0].upper()], cmd[1])
+                logger.info("Command sent successfully")
 
     def _switch_pet(self, pet_type: str) -> None:
         logger.info(f"Switching to pet: {pet_type}")
