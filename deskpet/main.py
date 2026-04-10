@@ -185,6 +185,7 @@ class DeskPetApp:
             self._qapp = QApplication.instance()
             if self._qapp is None:
                 self._qapp = QApplication(sys.argv)
+            self._qapp.setQuitOnLastWindowClosed(False)
             logger.info(f"QApplication initialized: {self._qapp}")
             from deskpet.pet.overlay_win import WindowsOverlay
 
