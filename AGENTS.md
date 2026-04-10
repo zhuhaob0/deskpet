@@ -1,39 +1,39 @@
 # DeskPet Agent Instructions
 
 ## Dependency Management
-
 - Use Tsinghua mirror: `pip install -i https://pypi.tuna.tsinghua.edu.cn/simple`
-- Max 3 retries on installation failure
 
-## Key Commands
-
+## Commands
 ```bash
 pip install -e ".[dev]"    # Install with dev dependencies
-deskpet                    # Run app (Windows) or python -m deskpet.main (Linux)
+deskpet                    # Run (Windows) or python -m deskpet.main (Linux)
 ruff check .               # Linter
 python scripts/generate_sprites.py  # Generate test sprites
 ```
 
 ## Architecture
+- **deskpet/main.py**: Entry point. `DeskPetApp` class runs ~30fps update loop in daemon thread.
+- **pet/engine.py**: `PetEngine` manages behavior state machine. Must call `start()` before `tick()`.
+- **commands/**: `/<cmd>` registry. Inherit `Command`, register via `get_command_registry()`.
+- **chat/**: Natural language handlers. Implement `ChatHandler`, register via `get_registry()`.
+- **ui/chat_dialog.py**: PyQt6 dialog. Call `set_dependencies()` before `show()`.
 
-- **deskpet/main.py**: App entry point, runs update loop at ~30fps
-- **pet/engine.py**: PetEngine manages behavior state machine. Must call `start()` before `tick()`.
-- **commands/**: Registry for `/<cmd>` syntax. Inherit `Command` base class.
-- **chat/**: Natural language handlers via ChatHandler protocol. Register to `get_registry()`.
-- **ui/chat_dialog.py**: PyQt6 dialog - call `set_dependencies()` before `show()`.
+## Key Patterns
+- **PetEngine initialization**: `PetEngine(pet_type, resource_dir / "pets", bounds=ScreenBounds(...))` then `engine.start()`
+- **ScreenBounds**: `ScreenBounds(width, height, margin=64)` limits pet movement area
+- **Two registries**: Command (`/walk`) and chat (natural language) systems are separate
+- **Overlay**: PyQt6 transparent window on Windows, `ConsoleOverlay` on Linux
 
-## Important Notes
+## Config
+- Auto-saves to `~/.deskpet/config.json`
+- Logs to `log/deskpet.log` (cleared on each run)
+- Fields: `pet.type`, `pet.position_x/y`, `chat.handler`, `chat.responses_file`
 
-- PetEngine requires `start()` before `tick()`. Pass `ScreenBounds` to limit movement area.
-- Command system (`/walk`) and chat system (natural language) are separate registries.
-- Overlay: PyQt6 transparent window on Windows, console mode on Linux.
-- Config auto-saves to `%USERPROFILE%\.deskpet\config.json`.
-- No tests directory yet - run `ruff check .` for verification.
+## Build
+```bash
+pyinstaller deskpet.spec --clean
+# Output: dist/DeskPet/
+```
 
-## Directory Ownership
-
-- `pet/`: Behavior state machine, sprite management, overlay rendering
-- `chat/`: Natural language response handlers
-- `commands/`: Slash commands (/walk, /sleep, etc.)
-- `ui/`: PyQt6 dialogs
-- `config/`: AppConfig dataclass
+## Verification
+- Run `ruff check .` (no tests directory yet)
