@@ -1,22 +1,22 @@
 # DeskPet
 
-A customizable desktop pet application for Windows. Run applications on your desktop with an adorable pet companion that can walk, sleep, eat, and chat with you.
+A customizable desktop pet application for Windows. Run a cute pet on your desktop that can walk, sleep, eat, play, and chat with you.
 
 ## Features
 
+- **Transparent Overlay** - Pet displays on desktop with transparent background
 - **System Tray Integration** - Runs minimized in the Windows taskbar
-- **Multiple Pet Types** - Switch between different pet types via tray menu
-- **Interactive Behaviors** - Command your pet to walk, sleep, eat, or play
+- **Multiple Pet Types** - Switch between cat, dog, and default pets via tray menu
+- **Interactive Behaviors** - Command your pet via chat dialog or tray menu
+- **Drag & Drop** - Drag the pet to move it anywhere on screen
 - **Double-Click Chat** - Open chat dialog to interact with your pet
-- **Extensible Chat System** - Plugin architecture for AI integration
+- **Extensible Architecture** - Plugin architecture for commands and AI chat integration
 
 ## Requirements
 
 - Python 3.10+
-- Windows OS (for full functionality)
-- PyQt6 (for transparent overlay window)
-- pystray (for system tray, Windows/Linux)
-- Pillow (for image handling)
+- Windows OS
+- PyQt6 (for transparent overlay and system tray)
 
 ## Installation
 
@@ -29,18 +29,16 @@ pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -e ".[dev]"
 ### Windows
 
 ```bash
-deskpet
+python -m deskpet.main
 ```
 
 ### Linux (Console Mode)
-
-On Linux without GTK/pystray, the app runs in console mode:
 
 ```bash
 python -m deskpet.main
 ```
 
-Available commands:
+Available console commands:
 - `walk` - Random walk
 - `sleep` - Sleep for 8s
 - `eat` - Eat for 3s
@@ -54,17 +52,17 @@ Available commands:
 deskpet/
 ├── deskpet/
 │   ├── main.py           # App entry point & lifecycle
-│   ├── tray.py           # System tray management
+│   ├── tray.py           # System tray management (PyQt6)
 │   ├── pet/              # Pet engine & rendering
 │   │   ├── engine.py     # State machine & behaviors
 │   │   ├── sprites.py    # Sprite management
-│   │   ├── overlay.py    # Transparent window overlay
-│   │   └── overlay_win.py # Windows implementation
-│   ├── chat/             # Chat system (for natural language)
+│   │   ├── overlay.py    # Abstract overlay base
+│   │   └── overlay_win.py # Windows transparent window
+│   ├── chat/             # Natural language chat system
 │   │   ├── base.py       # ChatHandler protocol
 │   │   ├── static.py     # Fixed response handler
 │   │   └── registry.py   # Handler registry
-│   ├── commands/         # Command system (for /cmd syntax)
+│   ├── commands/         # Slash command system (/cmd)
 │   │   └── __init__.py   # Built-in commands
 │   ├── ui/               # UI components
 │   │   └── chat_dialog.py # Chat dialog window
@@ -78,10 +76,10 @@ deskpet/
 
 ## Pet Behaviors
 
-| Behavior | Duration | Description |
-|----------|----------|-------------|
-| IDLE | - | Default state, pet occasionally walks randomly |
-| WALK | 5s | Moves toward target position |
+| Behavior | Default Duration | Description |
+|----------|-----------------|-------------|
+| IDLE | - | Default state, occasionally walks randomly |
+| WALK | 5s | Moves toward target position (or random if no target) |
 | SLEEP | 8s | Sleep animation |
 | EAT | 3s | Eating animation |
 | PLAY | 6s | Playing animation |
@@ -89,11 +87,11 @@ deskpet/
 ### Behavior API
 
 ```python
-from deskpet.pet import PetEngine, Behavior
+from deskpet.pet.engine import PetEngine, Behavior
 
 engine = PetEngine("cat", resource_dir / "pets")
 
-# Command behaviors
+# Command behaviors (timed)
 engine.command(Behavior.SLEEP, duration=5.0)
 engine.command(Behavior.EAT, duration=3.0)
 
@@ -101,7 +99,7 @@ engine.command(Behavior.EAT, duration=3.0)
 engine.walk_to(500, 300)
 
 # Walk to random position
-engine.walk_random()
+engine.command(Behavior.WALK, duration=0)  # 0 = continuous random walking
 
 # Set behavior change callback
 engine.set_behavior_callback(lambda b: print(f"Now: {b.name}"))
@@ -109,7 +107,7 @@ engine.set_behavior_callback(lambda b: print(f"Now: {b.name}"))
 
 ## Chat Dialog Commands
 
-Double-click the pet to open the chat dialog. Use `/<command>` syntax to control your pet:
+Double-click the pet to open the chat dialog. Use `/<command>` syntax:
 
 | Command | Aliases | Description |
 |---------|---------|-------------|
@@ -137,13 +135,12 @@ class CustomCommand(Command):
             return CommandResult(False, f"Usage: {self.usage}")
         return CommandResult(True, f"Executed with: {args[0]}")
 
-# Register the command
 get_command_registry().register(CustomCommand())
 ```
 
-## Adding Pet Sprites
+## Pet Sprites
 
-Place sprite images in `resources/pets/<pet_type>/` with naming convention:
+Place sprite images in `resources/pets/<pet_type>/`:
 
 ```
 <behavior>_<frame>.png
@@ -153,7 +150,7 @@ Example: `idle_00.png`, `walk_01.png`, `sleep_02.png`
 
 Supported behaviors: `idle`, `walk`, `sleep`, `eat`, `play`
 
-Generate placeholder sprites for testing:
+Generate placeholder sprites:
 
 ```bash
 python scripts/generate_sprites.py
@@ -161,7 +158,7 @@ python scripts/generate_sprites.py
 
 ## Extending Chat System
 
-Implement the `ChatHandler` protocol to add custom chat backends for natural language responses:
+Implement `ChatHandler` protocol for natural language responses:
 
 ```python
 from deskpet.chat.base import ChatHandler
@@ -169,8 +166,7 @@ from deskpet.chat.registry import get_registry
 
 class AIDemoHandler:
     def handle(self, message: str, context: dict) -> str:
-        # Your AI integration here
-        return "AI response"
+        return "AI response here"
 
     def is_available(self) -> bool:
         return True
@@ -178,11 +174,9 @@ class AIDemoHandler:
 get_registry().register(AIDemoHandler())
 ```
 
-**Note:** Chat handlers are for natural language responses. For structured commands, use the [command system](#adding-custom-commands) instead.
-
 ## Configuration
 
-Config is stored at `%USERPROFILE%\.deskpet\config.json`:
+Config auto-saves to `%USERPROFILE%\.deskpet\config.json`:
 
 ```json
 {
@@ -194,29 +188,26 @@ Config is stored at `%USERPROFILE%\.deskpet\config.json`:
   "chat": {
     "handler": "static",
     "responses_file": null
-  },
-  "run_on_startup": false
+  }
 }
 ```
+
+Logs output to `log/deskpet.log` (cleared on each run).
 
 ## Development
 
 ```bash
 pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -e ".[dev]"
 ruff check .
-pytest
 ```
 
 ## Build
 
-Build Windows executable:
-
 ```bash
-pip install -i https://pypi.tuna.tsinghua.edu.cn/simple pyinstaller
 pyinstaller deskpet.spec --clean
 ```
 
-Output: `dist/DeskPet` (executable + dependencies)
+Output: `dist/DeskPet/`
 
 ## License
 
