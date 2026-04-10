@@ -27,7 +27,9 @@ if TYPE_CHECKING:
 
 
 class ChatMessage:
-    def __init__(self, text: str, is_user: bool, is_command: bool = False, timestamp: datetime | None = None):
+    def __init__(
+        self, text: str, is_user: bool, is_command: bool = False, timestamp: datetime | None = None
+    ):
         self.text = text
         self.is_user = is_user
         self.is_command = is_command
@@ -82,7 +84,11 @@ class ChatBubble(QWidget):
         content_label.setStyleSheet(bubble_style)
 
         layout.addWidget(time_label, 0, Qt.AlignmentFlag.AlignRight)
-        layout.addWidget(content_label, 0, Qt.AlignmentFlag.AlignRight if self.message.is_user else Qt.AlignmentFlag.AlignLeft)
+        layout.addWidget(
+            content_label,
+            0,
+            Qt.AlignmentFlag.AlignRight if self.message.is_user else Qt.AlignmentFlag.AlignLeft,
+        )
 
 
 class ChatDialog(QDialog):
@@ -294,9 +300,7 @@ You can also just chat with me!"""
     def _scroll_to_bottom(self) -> None:
         scroll_area = self.chat_area.findChild(QScrollArea)
         if scroll_area:
-            scroll_area.verticalScrollBar().setValue(
-                scroll_area.verticalScrollBar().maximum()
-            )
+            scroll_area.verticalScrollBar().setValue(scroll_area.verticalScrollBar().maximum())
 
     def _on_text_changed(self, text: str) -> None:
         if text.startswith("/"):
@@ -343,13 +347,15 @@ You can also chat with me normally!"""
 
         from deskpet.commands.base import CommandContext
 
-        context = CommandContext(pet_engine=self._pet_engine)
+        context = CommandContext(pet_engine=self._pet_engine, user_data={})
         result = self._command_registry.execute(text, context)
 
         if result.success:
             self._add_message(ChatMessage(result.message, is_user=False, is_command=True))
         else:
-            self._add_message(ChatMessage(f"Error: {result.message}", is_user=False, is_command=True))
+            self._add_message(
+                ChatMessage(f"Error: {result.message}", is_user=False, is_command=True)
+            )
 
     def _handle_chat(self, text: str) -> None:
         if self._chat_registry is None:
@@ -363,7 +369,9 @@ You can also chat with me normally!"""
         if response:
             self._add_message(ChatMessage(response, is_user=False))
         else:
-            self._add_message(ChatMessage("I didn't understand that. Try /help for commands.", is_user=False))
+            self._add_message(
+                ChatMessage("I didn't understand that. Try /help for commands.", is_user=False)
+            )
 
     def closeEvent(self, event) -> None:
         event.accept()
