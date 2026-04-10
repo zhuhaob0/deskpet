@@ -143,7 +143,7 @@ class DeskPetApp:
         self.chat_controller: ChatDialogController | None = None
         self._qapp = None
         self._running = False
-        self._update_thread: threading.Thread | None = None
+        self._timer = None
 
     def initialize(self) -> None:
         screen_width, screen_height = get_screen_size()
@@ -232,45 +232,29 @@ class DeskPetApp:
                     command_registry=get_command_registry(),
                 )
 
-    def _update_loop(self, fps: float = 30.0) -> None:
-        logger.info("Update loop started")
-        frame_time = 1.0 / fps
-        last_sprite = ""
-        last_position = (0, 0)
-        frame_count = 0
+    def _update_loop(self) -> None:
+        if self.pet_engine and self.overlay:
+            result = self.pet_engine.tick()
 
-        while self._running:
-            if self.pet_engine and self.overlay:
-                result = self.pet_engine.tick()
-                frame_count += 1
+            self.overlay.update_sprite(result.sprite)
+            self.overlay.move(result.position)
 
-                if frame_count % 100 == 0:
-                    logger.debug(
-                        f"Frame {frame_count}: sprite={result.sprite}, pos={result.position}"
-                    )
-
-                if result.sprite != last_sprite:
-                    self.overlay.update_sprite(result.sprite)
-                    last_sprite = result.sprite
-
-                if result.position != last_position:
-                    self.overlay.move(result.position)
-                    last_position = result.position
-
-                if not self.overlay._window:
-                    logger.info("Creating overlay window")
-                    self.overlay.show(result.sprite, result.position)
-                    logger.info("Overlay window created")
-
-            time.sleep(frame_time)
+            if not self.overlay._window:
+                logger.info("Creating overlay window")
+                self.overlay.show(result.sprite, result.position)
+                logger.info("Overlay window created")
 
     def run(self) -> None:
         logger.info("DeskPet.run() starting...")
         self._running = True
 
-        self._update_thread = threading.Thread(target=self._update_loop, daemon=True)
-        self._update_thread.start()
-        logger.info("Update thread started")
+        logger.info("Starting Qt timer for update loop...")
+        from PyQt6.QtCore import QTimer
+
+        self._timer = QTimer()
+        self._timer.timeout.connect(self._update_loop)
+        self._timer.start(33)
+        logger.info("Qt timer started")
 
         logger.info("Starting tray...")
         if self.tray:
@@ -280,6 +264,9 @@ class DeskPetApp:
     def quit(self) -> None:
         logger.info("Shutting down DeskPet")
         self._running = False
+
+        if hasattr(self, "_timer") and self._timer:
+            self._timer.stop()
 
         if self.chat_controller:
             self.chat_controller.close()

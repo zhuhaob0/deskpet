@@ -111,7 +111,7 @@ class TrayManager:
         logger.info("Qt event loop ended")
 
     def _on_tray_activated(self, reason) -> None:
-        if reason == QSystemTrayIcon.ActivationReason.DoubleClick:
+        if int(reason) == QSystemTrayIcon.ActivationReason.DoubleClick:
             logger.info("Tray double-clicked")
             self._send_command("status")
 
