@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import logging
-from PyQt6.QtCore import Qt, QPoint
-from PyQt6.QtGui import QPixmap, QMouseEvent
+from PyQt6.QtCore import Qt, QPoint, QRect
+from PyQt6.QtGui import QPixmap, QMouseEvent, QPainter, QRegion
 from PyQt6.QtWidgets import QLabel, QWidget
 
 from deskpet.pet.overlay import PetOverlay
@@ -18,8 +18,7 @@ class TransparentWindow(QWidget):
         self._on_double_click = on_double_click
         self._drag_start = None
         self._is_dragging = False
-        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
-        self.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground, True)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setWindowFlags(
             Qt.WindowType.FramelessWindowHint
             | Qt.WindowType.Tool
@@ -32,10 +31,7 @@ class TransparentWindow(QWidget):
         self._label = QLabel(self)
         self._label.setFixedSize(128, 128)
         self._label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._label.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
-        self._label.setStyleSheet(
-            "QLabel { background-color: transparent; border: none; padding: 0px; margin: 0px; }"
-        )
+        self._label.setStyleSheet("background: transparent;")
 
     def set_pixmap(self, path: str) -> None:
         pixmap = QPixmap(path)
@@ -48,14 +44,17 @@ class TransparentWindow(QWidget):
             )
             self._label.setPixmap(scaled)
 
-    def paintEvent(self, event) -> None:
-        pass
+    def setMask(self, pixmap: QPixmap) -> None:
+        mask = pixmap.mask()
+        if mask:
+            super().setMask(mask)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
             self._drag_start = event.globalPosition().toPoint()
             self._is_dragging = True
             event.accept()
+            logger.info(f"Mouse pressed at {event.globalPosition().toPoint()}")
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         if self._is_dragging and self._drag_start:
@@ -63,15 +62,15 @@ class TransparentWindow(QWidget):
             new_pos = self.pos() + delta
             self.move(new_pos)
             self._drag_start = event.globalPosition().toPoint()
+            logger.info(f"Dragging to {new_pos}")
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
-        if event.button() == Qt.MouseButton.LeftButton:
-            self._drag_start = None
-            self._is_dragging = False
-            event.accept()
+        self._drag_start = None
+        self._is_dragging = False
+        event.accept()
 
     def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
-        if event.button() == Qt.MouseButton.LeftButton and self._on_double_click:
+        if self._on_double_click:
             self._on_double_click()
         event.accept()
 

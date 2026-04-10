@@ -121,14 +121,15 @@ class PetEngine:
 
     def _set_behavior(self, behavior: Behavior, duration: float = 0.0) -> None:
         with self._lock:
-            if self.state.behavior != behavior:
-                old_behavior = self.state.behavior
-                self.state.update_behavior(behavior, duration)
-                logger.info(
-                    f"Behavior changed: {old_behavior.name} -> {behavior.name} (duration={duration}s)"
-                )
-                if self._on_behavior_change:
-                    self._on_behavior_change(behavior)
+            old_behavior = self.state.behavior
+            self.state.update_behavior(behavior, duration)
+            logger.info(
+                f"Behavior changed: {old_behavior.name} -> {behavior.name} (duration={duration}s)"
+            )
+            if behavior == Behavior.WALK and duration == 0:
+                self._set_walk_target()
+            if self._on_behavior_change:
+                self._on_behavior_change(behavior)
 
     def command(self, behavior: Behavior, duration: float = 0.0) -> None:
         if not self._running:
@@ -198,13 +199,6 @@ class PetEngine:
         self.state.last_update = current_time
 
         self._process_command_queue()
-
-        if self.state.behavior == Behavior.WALK and self.state.behavior_duration == 0:
-            if (
-                self.state.target_x == self.state.position_x
-                and self.state.target_y == self.state.position_y
-            ):
-                self._set_walk_target()
 
         if self.state.is_behavior_complete() and self.state.behavior != Behavior.IDLE:
             self._set_behavior(Behavior.IDLE)
