@@ -13,6 +13,7 @@ class TransparentWindow(QWidget):
     def __init__(self, on_double_click=None):
         super().__init__()
         self._on_double_click = on_double_click
+        self._drag_start = None
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setWindowFlags(
             Qt.WindowType.FramelessWindowHint
@@ -30,6 +31,24 @@ class TransparentWindow(QWidget):
         if not pixmap.isNull():
             scaled = pixmap.scaled(128, 128, Qt.AspectRatioMode.KeepAspectRatio)
             self._label.setPixmap(scaled)
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        if event.button() == Qt.MouseButton.LeftButton:
+            self._drag_start = event.globalPosition().toPoint()
+            event.accept()
+
+    def mouseMoveEvent(self, event: QMouseEvent) -> None:
+        if event.buttons() & Qt.MouseButton.LeftButton and self._drag_start:
+            delta = event.globalPosition().toPoint() - self._drag_start
+            new_pos = self.pos() + delta
+            self.move(new_pos)
+            self._drag_start = event.globalPosition().toPoint()
+            event.accept()
+
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+        if event.button() == Qt.MouseButton.LeftButton:
+            self._drag_start = None
+            event.accept()
 
     def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
         if self._on_double_click:
