@@ -238,7 +238,9 @@ class DeskPetApp:
             result = self.pet_engine.tick()
 
             self.overlay.update_sprite(result.sprite)
-            self.overlay.move(result.position)
+
+            if self.overlay._window and not self.overlay._window.is_dragging:
+                self.overlay.move(result.position)
 
             if not self.overlay._window:
                 logger.info("Creating overlay window")

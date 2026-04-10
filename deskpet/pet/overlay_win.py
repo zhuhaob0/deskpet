@@ -43,18 +43,17 @@ class TransparentWindow(QWidget):
                 Qt.TransformationMode.SmoothTransformation,
             )
             self._label.setPixmap(scaled)
+            self.setMask(scaled.mask())
 
-    def setMask(self, pixmap: QPixmap) -> None:
-        mask = pixmap.mask()
-        if mask:
-            super().setMask(mask)
+    @property
+    def is_dragging(self) -> bool:
+        return self._is_dragging
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
             self._drag_start = event.globalPosition().toPoint()
             self._is_dragging = True
             event.accept()
-            logger.info(f"Mouse pressed at {event.globalPosition().toPoint()}")
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         if self._is_dragging and self._drag_start:
@@ -62,7 +61,6 @@ class TransparentWindow(QWidget):
             new_pos = self.pos() + delta
             self.move(new_pos)
             self._drag_start = event.globalPosition().toPoint()
-            logger.info(f"Dragging to {new_pos}")
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         self._drag_start = None
