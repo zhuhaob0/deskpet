@@ -28,3 +28,13 @@ config.json
 # Logs
 log/
 *.log
+
+# Design system (ui-ux-pro-max skill)
+design-system/
+
+# Build artifacts
+*.spec
+
+# OpenCode
+.opencode/skills/
+.opencode/*.json
