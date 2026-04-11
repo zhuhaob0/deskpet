@@ -56,6 +56,9 @@ class TrayManager:
 
     def set_pet_engine(self, engine: "PetEngine") -> None:
         self._pet_engine = engine
+        if engine:
+            self._current_pet = engine.get_state().name
+            logger.info(f"Set current pet to: {self._current_pet}")
 
     def set_on_switch_pet(self, callback: Callable[[str], None]) -> None:
         self._on_switch_pet = callback
@@ -224,6 +227,8 @@ class TrayManager:
             except KeyError:
                 logger.warning(f"Unknown behavior: {behavior_name}")
 
+        self._build_menu()
+
     def _switch_pet(self, pet_type: str) -> None:
         logger.info(f"Switching to pet: {pet_type}")
         self._current_pet = pet_type
@@ -235,10 +240,11 @@ class TrayManager:
             self._sprite_importer.get_available_actions(pet_type) if self._sprite_importer else []
         )
         if behaviors:
-            default_action = behaviors[0]
-            self._current_behavior = default_action
-            logger.info(f"Triggering default action for {pet_type}: {default_action}")
-            self._send_command(default_action)
+            self._current_behavior = behaviors[0]
+            logger.info(f"Triggering default action for {pet_type}: {self._current_behavior}")
+            self._send_command(self._current_behavior)
+
+        self._build_menu()
 
     def _quit(self) -> None:
         logger.info("Quit requested from tray")
