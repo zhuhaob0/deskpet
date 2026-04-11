@@ -675,15 +675,24 @@ def create_pet_sprites(output_dir: Path, name: str, draw_func) -> None:
             filename = f"{behavior}_{frame:02d}.png"
             img.save(output_dir / filename)
 
-    icon_size = 64
+    icon_size = 32
     icon = Image.new("RGBA", (view_width, view_height), (0, 0, 0, 0))
     icon_draw = ImageDraw.Draw(icon)
     idle_color = colors["idle"] + (255,) if len(colors["idle"]) == 3 else colors["idle"]
     draw_func(icon, icon_draw, 0, 1, idle_color, False)
     icon = add_edge_feather(icon, radius=1)
-    icon_resized = icon.resize((icon_size, icon_size), Image.Resampling.LANCZOS)
+
+    aspect = view_width / view_height
+    if aspect > 1:
+        new_w, new_h = icon_size, int(icon_size / aspect)
+    else:
+        new_w, new_h = int(icon_size * aspect), icon_size
+
+    icon_resized = icon.resize((new_w, new_h), Image.Resampling.LANCZOS)
     icon_final = Image.new("RGBA", (icon_size, icon_size), (0, 0, 0, 0))
-    icon_final.paste(icon_resized, (0, 0), icon_resized)
+    offset_x = (icon_size - new_w) // 2
+    offset_y = (icon_size - new_h) // 2
+    icon_final.paste(icon_resized, (offset_x, offset_y), icon_resized)
     icon_final.save(output_dir.parent / "icon.png")
 
     print(f"Created {name} detailed sprites in {output_dir}")

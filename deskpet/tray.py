@@ -86,13 +86,16 @@ class TrayManager:
 
         logger.info("Creating QSystemTrayIcon...")
         from PyQt6.QtGui import QPixmap, QIcon
+        from PyQt6.QtCore import QSize
 
         try:
             pixmap = QPixmap(self.icon_path)
             if not pixmap.isNull():
-                icon = QIcon(pixmap)
-                self._tray = QSystemTrayIcon(icon, app)
-                logger.info(f"Tray icon loaded from: {self.icon_path}")
+                icon = QIcon()
+                icon.addPixmap(pixmap, QIcon.Mode.Normal)
+                self._tray = QSystemTrayIcon(app)
+                self._tray.setIcon(icon)
+                logger.info(f"Tray icon loaded from: {self.icon_path}, size: {pixmap.size()}")
             else:
                 self._tray = QSystemTrayIcon(app)
                 logger.warning("Failed to load tray icon, using default")
