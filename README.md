@@ -50,7 +50,9 @@ Available console commands:
 
 ```
 deskpet/
-├── deskpet/
+├── .deskpet/             # Local config (gitignored)
+│   └── config.json       # User configuration
+├── deskpet/              # Main package
 │   ├── main.py           # App entry point & lifecycle
 │   ├── tray.py           # System tray management (PyQt6)
 │   ├── pet/              # Pet engine & rendering
@@ -65,13 +67,18 @@ deskpet/
 │   ├── commands/         # Slash command system (/cmd)
 │   │   └── __init__.py   # Built-in commands
 │   ├── ui/               # UI components
-│   │   └── chat_dialog.py # Chat dialog window
+│   │   ├── chat_dialog.py # Chat dialog window
+│   │   └── import_dialog.py # Sprite import dialog
+│   ├── utils/            # Utility modules
+│   │   └── sprite_importer.py # GIF/MP4 to sprites
 │   └── config/           # Configuration
 │       └── settings.py   # AppConfig dataclass
 ├── scripts/              # Utility scripts
-│   └── generate_sprites.py
-└── resources/
-    └── pets/             # Pet sprite images
+│   ├── generate_sprites.py # Generate test sprites
+│   └── generate_logo.py    # Generate tray icon
+├── resources/
+│   └── pets/             # Pet sprite images
+└── log/                  # Runtime logs (gitignored)
 ```
 
 ## Pet Behaviors
@@ -259,7 +266,7 @@ get_registry().register(AIDemoHandler())
 
 ## Configuration
 
-Config auto-saves to `%USERPROFILE%\.deskpet\config.json`:
+Config file location: `.deskpet/config.json` (in project root)
 
 ```json
 {
@@ -271,9 +278,17 @@ Config auto-saves to `%USERPROFILE%\.deskpet\config.json`:
   "chat": {
     "handler": "static",
     "responses_file": null
-  }
+  },
+  "run_on_startup": false
 }
 ```
+
+| Field | Description |
+|-------|-------------|
+| `pet.type` | Current pet type (e.g., `cat`, `dog`, `fox`) |
+| `pet.position_x/y` | Last pet position on screen |
+| `chat.handler` | Chat handler to use |
+| `run_on_startup` | Launch app on system startup (future) |
 
 Logs output to `log/deskpet.log` (cleared on each run).
 

@@ -23,7 +23,8 @@ venv/
 Thumbs.db
 
 # Config (local overrides)
-config.json
+.deskpet/
+!.deskpet/.gitkeep
 
 # Logs
 log/
