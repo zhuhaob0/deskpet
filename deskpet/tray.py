@@ -29,10 +29,6 @@ def _is_gui_available():
     return True
 
 
-SELECTED_STYLE = "background-color: #4a90d9; color: white;"
-DEFAULT_STYLE = ""
-
-
 class TrayManager:
     def __init__(
         self,
@@ -145,8 +141,9 @@ class TrayManager:
         pets_menu = QMenu("Pets", self._menu)
         for pet_type in pet_types:
             is_selected = pet_type == self._current_pet
-            pet_action = QAction(("✓ " if is_selected else "") + pet_type.title(), pets_menu)
-            pet_action.setStyleSheet(SELECTED_STYLE if is_selected else DEFAULT_STYLE)
+            pet_action = QAction(pet_type.title(), pets_menu)
+            pet_action.setCheckable(True)
+            pet_action.setChecked(is_selected)
             pet_action.triggered.connect(lambda checked, pt=pet_type: self._switch_pet(pt))
             pets_menu.addAction(pet_action)
         self._menu.addMenu(pets_menu)
@@ -157,8 +154,9 @@ class TrayManager:
             actions_menu = QMenu("Actions", self._menu)
             for behavior in behaviors:
                 is_selected = behavior == self._current_behavior
-                action = QAction(("✓ " if is_selected else "") + behavior.title(), actions_menu)
-                action.setStyleSheet(SELECTED_STYLE if is_selected else DEFAULT_STYLE)
+                action = QAction(behavior.title(), actions_menu)
+                action.setCheckable(True)
+                action.setChecked(is_selected)
                 action.triggered.connect(lambda checked, b=behavior: self._send_command(b))
                 actions_menu.addAction(action)
             self._menu.addMenu(actions_menu)
