@@ -43,7 +43,7 @@ class TransparentWindow(QWidget):
     def set_pixmap(self, path: str) -> None:
         pixmap = QPixmap(path)
         if not pixmap.isNull():
-            target_size = 160
+            target_size = 200
             scaled = pixmap.scaled(
                 target_size,
                 target_size,
