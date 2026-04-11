@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import logging
-from PyQt6.QtCore import Qt, QPoint, QRect
-from PyQt6.QtGui import QPixmap, QMouseEvent, QPainter, QRegion
+from PyQt6.QtCore import Qt, QPoint
+from PyQt6.QtGui import QPixmap, QMouseEvent, QPainter
 from PyQt6.QtWidgets import QLabel, QWidget
 
 from deskpet.pet.overlay import PetOverlay

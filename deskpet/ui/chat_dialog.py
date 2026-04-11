@@ -5,8 +5,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import Qt, QSize
-from PyQt6.QtGui import QColor, QFont, QTextCharFormat, QTextCursor
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QColor, QFont
 from PyQt6.QtWidgets import (
     QDialog,
     QHBoxLayout,
@@ -14,15 +14,13 @@ from PyQt6.QtWidgets import (
     QLineEdit,
     QPushButton,
     QScrollArea,
-    QSizePolicy,
-    QTextEdit,
     QVBoxLayout,
     QWidget,
 )
 
 
 if TYPE_CHECKING:
-    from deskpet.commands.base import CommandContext, CommandRegistry
+    from deskpet.commands.base import CommandRegistry
     from deskpet.pet.engine import PetEngine
 
 
@@ -230,7 +228,7 @@ class ChatDialog(QDialog):
         layout.setSpacing(8)
 
         self.input_field = QLineEdit()
-        self.input_field.setPlaceholderText(f"Type a message or /command...")
+        self.input_field.setPlaceholderText("Type a message or /command...")
         self.input_field.setStyleSheet("""
             QLineEdit {
                 background-color: #3a3a3a;

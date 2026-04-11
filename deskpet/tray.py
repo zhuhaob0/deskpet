@@ -4,14 +4,13 @@ from __future__ import annotations
 
 import logging
 import os
-import threading
 from typing import TYPE_CHECKING, Callable
 
 from PyQt6.QtGui import QAction, QIcon
 from PyQt6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
 if TYPE_CHECKING:
-    from deskpet.pet.engine import Behavior, PetEngine
+    from deskpet.pet.engine import PetEngine
 
 logger = logging.getLogger(__name__)
 
@@ -85,8 +84,7 @@ class TrayManager:
         logger.info("Menu created")
 
         logger.info("Creating QSystemTrayIcon...")
-        from PyQt6.QtGui import QPixmap, QIcon
-        from PyQt6.QtCore import QSize
+        from PyQt6.QtGui import QPixmap
 
         try:
             pixmap = QPixmap(self.icon_path)
@@ -126,23 +124,15 @@ class TrayManager:
 
         self._menu.clear()
 
-        walk_action = QAction("Walk Around", self._menu)
-        walk_action.triggered.connect(lambda: self._send_command("walk"))
-        self._menu.addAction(walk_action)
-
-        sleep_action = QAction("Sleep", self._menu)
-        sleep_action.triggered.connect(lambda: self._send_command("sleep"))
-        self._menu.addAction(sleep_action)
-
-        eat_action = QAction("Eat", self._menu)
-        eat_action.triggered.connect(lambda: self._send_command("eat"))
-        self._menu.addAction(eat_action)
-
-        play_action = QAction("Play", self._menu)
-        play_action.triggered.connect(lambda: self._send_command("play"))
-        self._menu.addAction(play_action)
-
-        self._menu.addSeparator()
+        behaviors = self._get_available_behaviors()
+        if behaviors:
+            actions_menu = QMenu("Actions", self._menu)
+            for behavior in behaviors:
+                action = QAction(behavior.title(), actions_menu)
+                action.triggered.connect(lambda checked, b=behavior: self._send_command(b))
+                actions_menu.addAction(action)
+            self._menu.addMenu(actions_menu)
+            self._menu.addSeparator()
 
         pets_menu = QMenu("Pets", self._menu)
         for pet_type in self._pet_types:
@@ -156,6 +146,11 @@ class TrayManager:
         quit_action = QAction("Quit", self._menu)
         quit_action.triggered.connect(self._quit)
         self._menu.addAction(quit_action)
+
+    def _get_available_behaviors(self) -> list[str]:
+        if self._pet_engine:
+            return self._pet_engine.get_available_behaviors()
+        return ["idle", "walk", "sleep", "eat", "play"]
 
     def _send_command(self, behavior_name: str) -> None:
         logger.info(f"Command received: {behavior_name}")
@@ -195,16 +190,16 @@ class TrayManager:
 
     def _run_console_mode(self) -> None:
         print(f"\n{'=' * 50}")
-        print(f"DeskPet Console Mode (tray not available)")
+        print("DeskPet Console Mode (tray not available)")
         print(f"{'=' * 50}")
         print(f"Pet: {self._pet_types[0] if self._pet_types else 'default'}")
-        print(f"\nCommands:")
-        print(f"  walk    - Random walk")
-        print(f"  sleep   - Sleep for 8s")
-        print(f"  eat     - Eat for 3s")
-        print(f"  play    - Play for 6s")
-        print(f"  status  - Show pet status")
-        print(f"  quit    - Exit")
+        print("\nCommands:")
+        print("  walk    - Random walk")
+        print("  sleep   - Sleep for 8s")
+        print("  eat     - Eat for 3s")
+        print("  play    - Play for 6s")
+        print("  status  - Show pet status")
+        print("  quit    - Exit")
         print(f"{'=' * 50}\n")
 
         while True:

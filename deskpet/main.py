@@ -6,15 +6,13 @@ import json
 import logging
 import os
 import sys
-import threading
-import time
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 from deskpet.chat import get_registry, StaticChatHandler
 from deskpet.commands.base import get_command_registry
 from deskpet.config import AppConfig
-from deskpet.pet import Behavior, PetEngine
+from deskpet.pet import PetEngine
 from deskpet.pet.engine import ScreenBounds
 from deskpet.pet.overlay import PetOverlay
 from deskpet.tray import TrayManager
@@ -173,7 +171,6 @@ class DeskPetApp:
 
     def _setup_overlay(self) -> None:
         import platform
-        import os
 
         os.environ.setdefault("QT_QPA_PLATFORM", "windows")
         system = platform.system().lower()

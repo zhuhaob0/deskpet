@@ -2,8 +2,13 @@
 
 from __future__ import annotations
 
-from deskpet.commands.base import Command, CommandContext, CommandResult, CommandRegistry
+from typing import TYPE_CHECKING
+
+from deskpet.commands.base import Command, CommandResult
 from deskpet.pet.engine import Behavior, PetEngine
+
+if TYPE_CHECKING:
+    from deskpet.commands.base import CommandRegistry
 
 
 class WalkCommand(Command):
@@ -173,12 +178,19 @@ class ConfigCommand(Command):
         return CommandResult(False, f"Unknown setting: {setting}")
 
 
+def _register_builtin_commands(registry: "CommandRegistry") -> None:
+    registry.register(WalkCommand())
+    registry.register(SleepCommand())
+    registry.register(EatCommand())
+    registry.register(PlayCommand())
+    registry.register(HelpCommand())
+    registry.register(StatusCommand())
+    registry.register(ConfigCommand())
+
+
 def get_command_registry():
-    from deskpet.commands.base import _default_registry
+    from deskpet.commands.base import CommandRegistry
 
-    if _default_registry is None:
-        from deskpet.commands.base import CommandRegistry
-
-        _default_registry = CommandRegistry()
-        _register_builtin_commands(_default_registry)
-    return _default_registry
+    registry = CommandRegistry()
+    _register_builtin_commands(registry)
+    return registry

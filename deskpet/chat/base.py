@@ -1,6 +1,6 @@
 """Base chat handler interface - implement this for custom chat backends."""
 
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from typing import Protocol
 
 

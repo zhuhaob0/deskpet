@@ -273,3 +273,9 @@ class PetEngine:
 
     def get_state(self) -> PetState:
         return self.state
+
+    def get_available_behaviors(self) -> list[str]:
+        return self.sprite_manager.list_behaviors()
+
+    def get_frame_count(self, behavior: str) -> int:
+        return self.sprite_manager.get_frame_count(behavior)
