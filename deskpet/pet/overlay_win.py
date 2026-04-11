@@ -20,19 +20,25 @@ class TransparentWindow(QWidget):
         self._drag_start = None
         self._is_dragging = False
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.setAttribute(Qt.WidgetAttribute.WA_OpaquePaintEvent, False)
         self.setWindowFlags(
             Qt.WindowType.FramelessWindowHint
             | Qt.WindowType.Tool
             | Qt.WindowType.WindowStaysOnTopHint
             | Qt.WindowType.WindowDoesNotAcceptFocus
+            | Qt.WindowType.BypassGraphicsProxyWidget
         )
-        self.setFixedSize(128, 128)
         self.setMouseTracking(True)
+        self.setStyleSheet("background: transparent; border: none;")
 
         self._label = QLabel(self)
-        self._label.setFixedSize(128, 128)
         self._label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._label.setStyleSheet("background: transparent;")
+        self._label.setStyleSheet("background: transparent; border: none; margin: 0; padding: 0;")
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Clear)
+        painter.fillRect(self.rect(), Qt.GlobalColor.transparent)
 
     def set_pixmap(self, path: str) -> None:
         pixmap = QPixmap(path)
@@ -44,8 +50,9 @@ class TransparentWindow(QWidget):
                 Qt.TransformationMode.SmoothTransformation,
             )
             self._label.setPixmap(scaled)
+            self._label.resize(scaled.size())
             self.resize(scaled.size())
-            self.setMask(QRegion())
+            self.update()
 
     @property
     def is_dragging(self) -> bool:
