@@ -28,6 +28,8 @@ class ImportDialog(QDialog):
         super().__init__(parent)
         self.importer = importer
         self.selected_file = ""
+        self.pet_name = ""
+        self.action_name = ""
 
         self.setWindowTitle("Import Sprite Animation")
         self.setModal(True)
@@ -120,6 +122,9 @@ class ImportDialog(QDialog):
         if not action_name:
             self.action_input.setFocus()
             return
+
+        self.pet_name = pet_name
+        self.action_name = action_name
 
         self.import_btn.setEnabled(False)
         self.import_btn.setText("Importing...")

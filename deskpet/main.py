@@ -209,6 +209,7 @@ class DeskPetApp:
         self.tray.set_sprite_importer(importer)
         self.tray.set_pet_engine(self.pet_engine)
         self.tray.set_on_switch_pet(self._switch_pet)
+        self.tray.set_on_import_complete(self._on_import_complete)
         self.tray.setup_menu(["cat", "dog", "default"])
 
     def _on_pet_double_click(self) -> None:
@@ -240,6 +241,10 @@ class DeskPetApp:
                     chat_registry=get_registry(),
                     command_registry=get_command_registry(),
                 )
+
+    def _on_import_complete(self, pet_name: str, action_name: str) -> None:
+        logger.info(f"Import complete, switching to pet: {pet_name}, action: {action_name}")
+        self._switch_pet(pet_name)
 
     def _update_loop(self) -> None:
         if self.pet_engine and self.overlay:

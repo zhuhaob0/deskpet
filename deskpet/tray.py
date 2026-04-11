@@ -46,6 +46,7 @@ class TrayManager:
         self._pet_engine: "PetEngine | None" = None
         self._pet_types: list[str] = []
         self._on_switch_pet: Callable[[str], None] | None = None
+        self._on_import_complete: Callable[[str, str], None] | None = None
         self._sprite_importer: "SpriteImporter | None" = None
         self._current_pet: str = ""
         self._current_behavior: str = "idle"
@@ -62,6 +63,9 @@ class TrayManager:
 
     def set_on_switch_pet(self, callback: Callable[[str], None]) -> None:
         self._on_switch_pet = callback
+
+    def set_on_import_complete(self, callback: Callable[[str, str], None]) -> None:
+        self._on_import_complete = callback
 
     def set_sprite_importer(self, importer: "SpriteImporter") -> None:
         self._sprite_importer = importer
@@ -197,8 +201,13 @@ class TrayManager:
 
         dialog = ImportDialog(self._sprite_importer)
         if dialog.exec():
-            logger.info("Import dialog accepted, refreshing menu")
+            pet_name = dialog.pet_name
+            action_name = dialog.action_name
+            logger.info(f"Import complete: {pet_name}/{action_name}, refreshing menu")
             self.refresh_menu()
+
+            if self._on_import_complete and pet_name:
+                self._on_import_complete(pet_name, action_name)
 
     def _send_command(self, behavior_name: str) -> None:
         logger.info(f"Command received: {behavior_name}")
