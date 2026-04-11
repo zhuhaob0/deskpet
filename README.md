@@ -140,20 +140,103 @@ get_command_registry().register(CustomCommand())
 
 ## Pet Sprites
 
-Place sprite images in `resources/pets/<pet_type>/`:
+### Directory Structure
 
 ```
-<behavior>_<frame>.png
+resources/pets/
+├── icon.png              # App tray icon (64x64, RGB with white background)
+├── cat/                  # Cat pet type
+│   ├── idle/             # Idle animation frames
+│   │   ├── idle_00.png
+│   │   ├── idle_01.png
+│   │   └── ...
+│   ├── walk/             # Walk animation frames
+│   │   ├── walk_00.png
+│   │   └── ...
+│   ├── sleep/
+│   ├── eat/
+│   └── play/
+├── dog/                  # Dog pet type (same structure)
+│   └── ...
+└── default/              # Default pet (fallback)
+    └── ...
 ```
 
-Example: `idle_00.png`, `walk_01.png`, `sleep_02.png`
+### Naming Convention
 
-Supported behaviors: `idle`, `walk`, `sleep`, `eat`, `play`
+**File format:** `<action>_<frame_number>.png`
 
-Generate placeholder sprites:
+- `<action>`: lowercase action name (e.g., `idle`, `walk`, `sleep`)
+- `<frame_number>`: zero-padded 2-digit number (e.g., `00`, `01`, `15`)
+
+**Examples:**
+- `idle_00.png`, `idle_01.png`, ..., `idle_15.png`
+- `walk_00.png`, `walk_01.png`, ..., `walk_19.png`
+- `dance_00.png` (custom action)
+
+### Requirements & Restrictions
+
+| Item | Requirement |
+|------|-------------|
+| **Format** | PNG with alpha channel (transparent background) |
+| **Background** | Transparent or white (for tray icon compatibility) |
+| **Minimum frames** | At least 1 frame required (`_00.png`) |
+| **Naming** | Must match `<action>_<frame>.png` pattern exactly |
+| **Action name** | Lowercase letters, numbers, underscores only |
+
+### Adding a New Pet Type
+
+1. Create a new directory under `resources/pets/`:
+   ```
+   resources/pets/fox/
+   ```
+
+2. Add action directories with sprite frames:
+   ```
+   resources/pets/fox/
+   ├── idle/
+   │   └── idle_00.png, idle_01.png, ...
+   ├── walk/
+   │   └── walk_00.png, walk_01.png, ...
+   └── ...
+   ```
+
+3. The pet type name (`fox`) will automatically appear in the tray menu under "Pets"
+
+### Adding a New Action
+
+1. Create an action directory inside the pet folder:
+   ```
+   resources/pets/cat/dance/
+   ```
+
+2. Add sprite frames:
+   ```
+   resources/pets/cat/dance/
+   ├── dance_00.png
+   ├── dance_01.png
+   ├── dance_02.png
+   └── ...
+   ```
+
+3. The action (`dance`) will automatically appear in the tray menu under "Actions"
+
+4. (Optional) Add command aliases in `deskpet/commands/__init__.py` for the new action
+
+### Generating Test Sprites
+
+Generate placeholder sprites for development:
 
 ```bash
 python scripts/generate_sprites.py
+```
+
+### Windows Tray Icon Limitation
+
+On Windows, the system tray does not support transparent PNG backgrounds. The tray icon (`resources/pets/icon.png`) must use a **white background** instead of transparency. Use the included logo generator:
+
+```bash
+python scripts/generate_logo.py
 ```
 
 ## Extending Chat System
