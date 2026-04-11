@@ -64,6 +64,12 @@ class TrayManager:
     def setup_menu(self, pet_types: list[str]) -> None:
         self._pet_types = pet_types
 
+    def refresh_menu(self) -> None:
+        if self._sprite_importer:
+            self._pet_types = self._sprite_importer.get_available_pets()
+            logger.info(f"Refreshed pet types: {self._pet_types}")
+        self._build_menu()
+
     def run(self) -> None:
         logger.info("TrayManager.run() starting...")
 
@@ -129,8 +135,9 @@ class TrayManager:
 
         self._menu.clear()
 
+        pet_types = self._get_all_pet_types()
         pets_menu = QMenu("Pets", self._menu)
-        for pet_type in self._pet_types:
+        for pet_type in pet_types:
             pet_action = QAction(pet_type.title(), pets_menu)
             pet_action.triggered.connect(lambda checked, pt=pet_type: self._switch_pet(pt))
             pets_menu.addAction(pet_action)
@@ -158,6 +165,11 @@ class TrayManager:
         quit_action.triggered.connect(self._quit)
         self._menu.addAction(quit_action)
 
+    def _get_all_pet_types(self) -> list[str]:
+        if self._sprite_importer:
+            return self._sprite_importer.get_available_pets()
+        return self._pet_types
+
     def _get_available_behaviors(self) -> list[str]:
         if self._pet_engine:
             return self._pet_engine.get_available_behaviors()
@@ -173,6 +185,7 @@ class TrayManager:
         dialog = ImportDialog(self._sprite_importer)
         if dialog.exec():
             logger.info("Import dialog accepted, refreshing menu")
+            self.refresh_menu()
 
     def _send_command(self, behavior_name: str) -> None:
         logger.info(f"Command received: {behavior_name}")
