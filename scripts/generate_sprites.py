@@ -1,8 +1,267 @@
-"""Generate anime-style pet sprites with smooth animations."""
+"""Generate Claymorphism-style pet sprites with soft 3D effects."""
 
 from pathlib import Path
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFilter
 import math
+
+
+def create_shadow(color: tuple, offset: int = 3, blur: int = 5) -> Image.Image:
+    """Create a soft shadow image."""
+    size = 128 + blur * 2
+    shadow = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(shadow)
+
+    shadow_color = (30, 20, 10, 80)
+    for i in range(offset, size - offset):
+        for j in range(offset, size - offset):
+            dx = i - size // 2
+            dy = j - size // 2
+            dist = math.sqrt(dx * dx + dy * dy)
+            if dist < 50:
+                alpha = int(80 * (1 - dist / 50))
+                shadow.putpixel((i, j), (*shadow_color[:3], alpha))
+
+    shadow = shadow.filter(ImageFilter.GaussianBlur(radius=blur))
+    return shadow
+
+
+def draw_claymorphism_body(
+    draw: ImageDraw.ImageDraw,
+    cx: int,
+    cy: int,
+    radius: int,
+    main_color: tuple,
+    highlight_color: tuple,
+    shadow_color: tuple,
+) -> None:
+    """Draw a claymorphism-style body with soft shadows and highlights."""
+    outer_shadow = Image.new("RGBA", (140, 140), (0, 0, 0, 0))
+    outer_draw = ImageDraw.Draw(outer_shadow)
+
+    for i in range(140):
+        for j in range(140):
+            dx = i - 70
+            dy = j - 70
+            dist = math.sqrt(dx * dx + dy * dy)
+            if 45 < dist < 55:
+                alpha = int(60 * (1 - abs(dist - 50) / 5))
+                outer_draw.ellipse([i - 1, j - 1, i + 1, j + 1], fill=(20, 15, 10, alpha))
+
+    outer_shadow = outer_shadow.filter(ImageFilter.GaussianBlur(radius=8))
+
+    draw.ellipse(
+        [cx - radius, cy - radius, cx + radius, cy + radius], fill=shadow_color, outline=None
+    )
+
+    offset = 4
+    draw.ellipse(
+        [cx - radius + offset, cy - radius + offset, cx + radius - offset, cy + radius - offset],
+        fill=main_color,
+        outline=None,
+    )
+
+    highlight_r = radius - 10
+    highlight_points = []
+    for angle in range(180, 360):
+        rad = math.radians(angle)
+        x = int(cx + math.cos(rad) * highlight_r)
+        y = int(cy + math.sin(rad) * highlight_r)
+        highlight_points.append((x, y))
+
+    if len(highlight_points) > 2:
+        for i in range(len(highlight_points) - 1):
+            p1, p2 = highlight_points[i], highlight_points[i + 1]
+            mid_x = (p1[0] + p2[0]) // 2
+            mid_y = (p1[1] + p2[1]) // 2
+            draw.ellipse([mid_x - 3, mid_y - 3, mid_x + 3, mid_y + 3], fill=highlight_color)
+
+
+def draw_cat_face(
+    draw: ImageDraw.ImageDraw,
+    cx: int,
+    cy: int,
+    frame: int,
+    total_frames: int,
+    main_color: tuple,
+    is_sleeping: bool = False,
+) -> None:
+    """Draw anime-style cat face with claymorphism effect."""
+    bounce = int(math.sin(frame / total_frames * math.pi * 2) * 4)
+
+    ear_color = main_color
+    inner_ear = (255, 180, 160, 255)
+
+    ear1 = [(cx - 35, cy - 25 + bounce), (cx - 25, cy - 45 + bounce), (cx - 15, cy - 25 + bounce)]
+    ear2 = [(cx + 15, cy - 25 + bounce), (cx + 25, cy - 45 + bounce), (cx + 35, cy - 25 + bounce)]
+    draw.polygon(ear1, fill=ear_color)
+    draw.polygon(ear2, fill=ear_color)
+    draw.polygon(
+        [(cx - 32, cy - 25 + bounce), (cx - 25, cy - 38 + bounce), (cx - 18, cy - 25 + bounce)],
+        fill=inner_ear,
+    )
+    draw.polygon(
+        [(cx + 18, cy - 25 + bounce), (cx + 25, cy - 38 + bounce), (cx + 32, cy - 25 + bounce)],
+        fill=inner_ear,
+    )
+
+    if is_sleeping:
+        draw.arc(
+            [cx - 15, cy - 5 + bounce, cx + 15, cy + 10 + bounce],
+            0,
+            180,
+            fill=(50, 40, 30),
+            width=3,
+        )
+        draw.line(
+            [cx - 25, cy + 15 + bounce, cx - 15, cy + 15 + bounce], fill=(50, 40, 30), width=2
+        )
+        draw.line(
+            [cx + 15, cy + 15 + bounce, cx + 25, cy + 15 + bounce], fill=(50, 40, 30), width=2
+        )
+    else:
+        eye_blink = frame % max(total_frames // 2, 1) < 2
+        eye_height = 6 if eye_blink else 18
+
+        eye_y = cy - 8 + bounce
+        draw.ellipse([cx - 22, eye_y, cx - 8, eye_y + eye_height], fill="white")
+        draw.ellipse([cx + 8, eye_y, cx + 22, eye_y + eye_height], fill="white")
+
+        if not eye_blink:
+            pupil_offset = int(math.sin(frame / total_frames * math.pi * 4) * 2)
+            draw.ellipse(
+                [cx - 18 + pupil_offset, eye_y + 4, cx - 12 + pupil_offset, eye_y + 12],
+                fill=(30, 20, 10),
+            )
+            draw.ellipse(
+                [cx + 12 + pupil_offset, eye_y + 4, cx + 18 + pupil_offset, eye_y + 12],
+                fill=(30, 20, 10),
+            )
+            draw.ellipse(
+                [cx - 17 + pupil_offset, eye_y + 5, cx - 14 + pupil_offset, eye_y + 8], fill="white"
+            )
+            draw.ellipse(
+                [cx + 13 + pupil_offset, eye_y + 5, cx + 16 + pupil_offset, eye_y + 8], fill="white"
+            )
+
+        nose_color = (255, 150, 150)
+        draw.ellipse([cx - 4, cy + 8 + bounce, cx + 4, cy + 14 + bounce], fill=nose_color)
+
+        mouth_open = int(abs(math.sin(frame / total_frames * math.pi * 6)) * 4)
+        draw.arc(
+            [cx - 10, cy + 14 + bounce, cx + 10, cy + 22 + bounce + mouth_open],
+            0,
+            180,
+            fill=(50, 40, 30),
+            width=2,
+        )
+
+        whisker_y = cy + 12 + bounce
+        for offset in [-12, -8, -4]:
+            draw.line(
+                [cx - 15, whisker_y + offset, cx - 35, whisker_y + offset - 5],
+                fill=(100, 80, 60),
+                width=1,
+            )
+            draw.line(
+                [cx + 15, whisker_y + offset, cx + 35, whisker_y + offset - 5],
+                fill=(100, 80, 60),
+                width=1,
+            )
+
+    tail_angle = math.sin(frame / total_frames * math.pi * 4) * 0.4
+    tail_x = cx + 40
+    tail_y = cy + 25 + bounce
+    for i in range(6):
+        t = i / 5
+        x = tail_x + math.sin(t * math.pi + tail_angle * math.pi) * (10 + i * 4)
+        y = tail_y + t * 30
+        width = 8 - i
+        draw.ellipse([x - width // 2, y - 2, x + width // 2, y + 2], fill=main_color)
+
+
+def draw_dog_face(
+    draw: ImageDraw.ImageDraw,
+    cx: int,
+    cy: int,
+    frame: int,
+    total_frames: int,
+    main_color: tuple,
+    is_sleeping: bool = False,
+) -> None:
+    """Draw anime-style dog face with claymorphism effect."""
+    bounce = int(math.sin(frame / total_frames * math.pi * 2) * 4)
+
+    ear_color = main_color
+
+    draw.ellipse([cx - 40, cy - 20 + bounce, cx - 15, cy + 15 + bounce], fill=ear_color)
+    draw.ellipse([cx + 15, cy - 20 + bounce, cx + 40, cy + 15 + bounce], fill=ear_color)
+
+    inner_ear = (200, 140, 120)
+    draw.ellipse([cx - 35, cy - 15 + bounce, cx - 20, cy + 10 + bounce], fill=inner_ear)
+    draw.ellipse([cx + 20, cy - 15 + bounce, cx + 35, cy + 10 + bounce], fill=inner_ear)
+
+    if is_sleeping:
+        draw.arc(
+            [cx - 15, cy - 5 + bounce, cx + 15, cy + 10 + bounce],
+            0,
+            180,
+            fill=(50, 40, 30),
+            width=3,
+        )
+        draw.line(
+            [cx - 25, cy + 15 + bounce, cx - 15, cy + 15 + bounce], fill=(50, 40, 30), width=2
+        )
+        draw.line(
+            [cx + 15, cy + 15 + bounce, cx + 25, cy + 15 + bounce], fill=(50, 40, 30), width=2
+        )
+    else:
+        eye_blink = frame % max(total_frames // 2, 1) < 2
+        eye_height = 5 if eye_blink else 16
+
+        eye_y = cy - 10 + bounce
+        draw.ellipse([cx - 20, eye_y, cx - 5, eye_y + eye_height], fill="white")
+        draw.ellipse([cx + 5, eye_y, cx + 20, eye_y + eye_height], fill="white")
+
+        if not eye_blink:
+            pupil_offset = int(math.sin(frame / total_frames * math.pi * 3) * 2)
+            draw.ellipse(
+                [cx - 15 + pupil_offset, eye_y + 3, cx - 8 + pupil_offset, eye_y + 11],
+                fill=(30, 20, 10),
+            )
+            draw.ellipse(
+                [cx + 8 + pupil_offset, eye_y + 3, cx + 15 + pupil_offset, eye_y + 11],
+                fill=(30, 20, 10),
+            )
+            draw.ellipse(
+                [cx - 14 + pupil_offset, eye_y + 4, cx - 11 + pupil_offset, eye_y + 7], fill="white"
+            )
+            draw.ellipse(
+                [cx + 9 + pupil_offset, eye_y + 4, cx + 12 + pupil_offset, eye_y + 7], fill="white"
+            )
+
+        nose_color = (40, 30, 20)
+        draw.ellipse([cx - 8, cy + 8 + bounce, cx + 8, cy + 18 + bounce], fill=nose_color)
+        draw.ellipse([cx - 5, cy + 10 + bounce, cx, cy + 14 + bounce], fill=(80, 60, 50))
+
+        tongue_out = (
+            int(abs(math.sin(frame / total_frames * math.pi * 5)) * 8) if not is_sleeping else 0
+        )
+        if tongue_out > 2:
+            draw.ellipse(
+                [cx - 5, cy + 18 + bounce, cx + 5, cy + 18 + tongue_out + bounce],
+                fill=(255, 120, 120),
+            )
+
+    tail_wag = math.sin(frame / total_frames * math.pi * 10) * 0.5
+    side = 1 if frame % (total_frames * 2) < total_frames else -1
+    tail_x = cx - 45 * side
+    tail_y = cy + 10 + bounce
+    for i in range(6):
+        t = i / 5
+        x = tail_x + math.sin(t * math.pi + tail_wag * math.pi) * (8 + i * 3) * side
+        y = tail_y + t * 25
+        width = 7 - i
+        draw.ellipse([x - width // 2, y - 2, x + width // 2, y + 2], fill=main_color)
 
 
 def draw_cat(
@@ -13,63 +272,14 @@ def draw_cat(
     color: tuple,
     is_sleeping: bool = False,
 ) -> None:
-    """Draw an anime-style cat."""
+    """Draw a claymorphism-style cat."""
     cx, cy = 64, 64
 
-    bounce = int(math.sin(frame / total_frames * math.pi * 2) * 3)
+    highlight = tuple(min(c + 40, 255) for c in color[:3]) + (255,)
+    shadow = tuple(max(c - 30, 0) for c in color[:3]) + (255,)
 
-    if is_sleeping:
-        draw.ellipse([20, 50, 108, 90], fill=color, outline="#333333", width=2)
-        draw.ellipse([75, 55, 100, 80], fill=color, outline="#333333", width=2)
-        draw.ellipse([85, 58, 95, 72], fill="white", outline="#333333", width=1)
-        draw.line([88, 68, 92, 68], fill="#333333", width=2)
-        draw.line([35, 35, 50, 45], fill=color, width=3)
-        draw.line([75, 35, 60, 45], fill=color, width=3)
-    else:
-        draw.ellipse([20, 30 + bounce, 108, 100 + bounce], fill=color, outline="#333333", width=2)
-
-        ear1 = [(25, 30 + bounce), (35, 10 + bounce), (45, 30 + bounce)]
-        ear2 = [(83, 30 + bounce), (93, 10 + bounce), (103, 30 + bounce)]
-        draw.polygon(ear1, fill=color, outline="#333333")
-        draw.polygon(ear2, fill=color, outline="#333333")
-
-        inner_ear1 = [(30, 28 + bounce), (35, 15 + bounce), (42, 28 + bounce)]
-        inner_ear2 = [(86, 28 + bounce), (93, 15 + bounce), (98, 28 + bounce)]
-        draw.polygon(inner_ear1, fill="#FFB6C1")
-        draw.polygon(inner_ear2, fill="#FFB6C1")
-
-        eye_offset = int(math.sin(frame / total_frames * math.pi * 4) * 2)
-        draw.ellipse([35, 50 + bounce, 55, 70 + bounce], fill="white", outline="#333333", width=1)
-        draw.ellipse([73, 50 + bounce, 93, 70 + bounce], fill="white", outline="#333333", width=1)
-        draw.ellipse([40 + eye_offset, 55 + bounce, 50 + eye_offset, 65 + bounce], fill="#333333")
-        draw.ellipse([78 + eye_offset, 55 + bounce, 88 + eye_offset, 65 + bounce], fill="#333333")
-
-        draw.ellipse([43, 57 + bounce, 47, 61 + bounce], fill="white")
-        draw.ellipse([81, 57 + bounce, 85, 61 + bounce], fill="white")
-
-        draw.ellipse([58, 72 + bounce, 70, 80 + bounce], fill="#FFB6C1", outline="#333333", width=1)
-
-        nose_y = 78 + bounce
-        draw.polygon(
-            [(64, nose_y), (60, nose_y + 5), (68, nose_y + 5)],
-            fill="#FFB6C1",
-            outline="#333333",
-            width=1,
-        )
-
-        mouth_open = int(math.sin(frame / total_frames * math.pi * 6) * 3) if not is_sleeping else 0
-        draw.arc([55, nose_y + 3, 73, nose_y + 12 + mouth_open], 0, 180, fill="#333333", width=1)
-
-        tail_angle = math.sin(frame / total_frames * math.pi * 4) * 0.3
-        tail_points = []
-        for i in range(5):
-            t = i / 4
-            x = 105 + math.sin(t * math.pi + tail_angle * math.pi) * (15 + i * 3)
-            y = 70 + bounce + i * 4
-            tail_points.append((x, y))
-        if len(tail_points) > 1:
-            draw.line(tail_points, fill=color, width=8)
-            draw.line(tail_points, fill=color, width=6)
+    draw_claymorphism_body(draw, cx, cy, 45, color, highlight, shadow)
+    draw_cat_face(draw, cx, cy, frame, total_frames, color, is_sleeping)
 
 
 def draw_dog(
@@ -80,115 +290,60 @@ def draw_dog(
     color: tuple,
     is_sleeping: bool = False,
 ) -> None:
-    """Draw an anime-style dog."""
+    """Draw a claymorphism-style dog."""
     cx, cy = 64, 64
 
-    bounce = int(math.sin(frame / total_frames * math.pi * 2) * 3)
+    highlight = tuple(min(c + 40, 255) for c in color[:3]) + (255,)
+    shadow = tuple(max(c - 30, 0) for c in color[:3]) + (255,)
 
-    if is_sleeping:
-        draw.ellipse([20, 50, 108, 90], fill=color, outline="#333333", width=2)
-        draw.ellipse([75, 55, 100, 80], fill=color, outline="#333333", width=2)
-        draw.ellipse([85, 58, 95, 72], fill="white", outline="#333333", width=1)
-        draw.line([88, 68, 92, 68], fill="#333333", width=2)
-        draw.ellipse([15, 30, 40, 55], fill=color, outline="#333333", width=2)
-        draw.ellipse([88, 30, 113, 55], fill=color, outline="#333333", width=2)
-    else:
-        draw.ellipse([20, 30 + bounce, 108, 100 + bounce], fill=color, outline="#333333", width=2)
-
-        draw.ellipse([10, 25 + bounce, 45, 55 + bounce], fill=color, outline="#333333", width=2)
-        draw.ellipse([83, 25 + bounce, 118, 55 + bounce], fill=color, outline="#333333", width=2)
-
-        eye_blink = frame % max(total_frames // 2, 1) < 2
-        eye_height = 4 if eye_blink else 15
-
-        draw.ellipse(
-            [35, 50 + bounce, 55, 50 + bounce + eye_height],
-            fill="white",
-            outline="#333333",
-            width=1,
-        )
-        draw.ellipse(
-            [73, 50 + bounce, 93, 50 + bounce + eye_height],
-            fill="white",
-            outline="#333333",
-            width=1,
-        )
-
-        if not eye_blink:
-            draw.ellipse([42, 53 + bounce, 50, 63 + bounce], fill="#333333")
-            draw.ellipse([80, 53 + bounce, 88, 63 + bounce], fill="#333333")
-            draw.ellipse([44, 55 + bounce, 47, 58 + bounce], fill="white")
-            draw.ellipse([82, 55 + bounce, 85, 58 + bounce], fill="white")
-
-        draw.ellipse([58, 70 + bounce, 70, 80 + bounce], fill="#333333", outline="#333333", width=1)
-
-        nose_y = 75 + bounce
-        draw.ellipse([58, nose_y, 70, nose_y + 10], fill="#333333")
-        draw.ellipse([60, nose_y + 2, 64, nose_y + 6], fill="#666666")
-
-        tongue_out = int(math.sin(frame / total_frames * math.pi * 6) * 5) if not is_sleeping else 0
-        if tongue_out > 0:
-            draw.ellipse([60, nose_y + 10, 68, nose_y + 10 + tongue_out], fill="#FF6B6B")
-
-        tail_wag = math.sin(frame / total_frames * math.pi * 8) * 0.4
-        tail_base_x = 15 if frame % (total_frames * 2) < total_frames else 113
-        tail_points = []
-        for i in range(5):
-            t = i / 4
-            x = tail_base_x + math.sin(t * math.pi + tail_wag * math.pi) * (10 + i * 2) * (
-                -1 if tail_base_x < 64 else 1
-            )
-            y = 40 + bounce + i * 5
-            tail_points.append((x, y))
-        if len(tail_points) > 1:
-            draw.line(tail_points, fill=color, width=8)
-            draw.line(tail_points, fill=color, width=6)
+    draw_claymorphism_body(draw, cx, cy, 45, color, highlight, shadow)
+    draw_dog_face(draw, cx, cy, frame, total_frames, color, is_sleeping)
 
 
-def create_pet_sprites(output_dir: Path, name: str, color: str, draw_func) -> None:
-    """Create sprites for a pet type."""
+def create_pet_sprites(output_dir: Path, name: str, draw_func) -> None:
+    """Create claymorphism-style sprites for a pet type."""
     output_dir.mkdir(parents=True, exist_ok=True)
 
     behaviors = {
-        "idle": (8, False),
-        "walk": (8, False),
-        "sleep": (4, True),
-        "eat": (8, False),
-        "play": (8, False),
+        "idle": (12, False),
+        "walk": (12, False),
+        "sleep": (6, True),
+        "eat": (12, False),
+        "play": (12, False),
     }
 
-    color_map = {
+    color_schemes = {
         "cat": {
-            "idle": (255, 165, 79, 255),
-            "walk": (255, 165, 79, 255),
-            "sleep": (180, 180, 180, 255),
-            "eat": (255, 165, 79, 255),
-            "play": (255, 140, 0, 255),
+            "idle": (255, 180, 120),
+            "walk": (255, 180, 120),
+            "sleep": (180, 180, 180),
+            "eat": (255, 160, 100),
+            "play": (255, 140, 80),
         },
         "dog": {
-            "idle": (139, 90, 43, 255),
-            "walk": (139, 90, 43, 255),
-            "sleep": (160, 160, 160, 255),
-            "eat": (139, 90, 43, 255),
-            "play": (160, 80, 30, 255),
+            "idle": (200, 160, 120),
+            "walk": (200, 160, 120),
+            "sleep": (160, 160, 160),
+            "eat": (180, 140, 100),
+            "play": (170, 120, 80),
         },
         "default": {
-            "idle": (100, 149, 237, 255),
-            "walk": (100, 149, 237, 255),
-            "sleep": (180, 180, 180, 255),
-            "eat": (100, 149, 237, 255),
-            "play": (70, 130, 200, 255),
+            "idle": (100, 160, 255),
+            "walk": (100, 160, 255),
+            "sleep": (160, 160, 180),
+            "eat": (80, 140, 240),
+            "play": (60, 120, 220),
         },
     }
 
-    pet_colors = color_map.get(name, color_map["default"])
+    colors = color_schemes.get(name, color_schemes["default"])
 
     for behavior, (frame_count, is_sleeping) in behaviors.items():
         for frame in range(frame_count):
             img = Image.new("RGBA", (128, 128), (0, 0, 0, 0))
             draw = ImageDraw.Draw(img)
 
-            pet_color = pet_colors.get(behavior, pet_colors["idle"])
+            pet_color = colors.get(behavior, colors["idle"]) + (255,)
             draw_func(img, draw, frame, frame_count, pet_color, is_sleeping)
 
             filename = f"{behavior}_{frame:02d}.png"
@@ -196,21 +351,20 @@ def create_pet_sprites(output_dir: Path, name: str, color: str, draw_func) -> No
 
     icon = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
     icon_draw = ImageDraw.Draw(icon)
-    draw_func(icon, icon_draw, 0, 1, pet_colors["idle"], False)
+    draw_func(icon, icon_draw, 0, 1, colors["idle"] + (255,), False)
 
-    icon_small = icon.resize((32, 32), Image.Resampling.LANCZOS)
     icon_final = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
-    icon_final.paste(icon_small, (16, 16))
+    icon_final.paste(icon, (0, 0), icon)
     icon_final.save(output_dir.parent / "icon.png")
 
-    print(f"Created {name} sprites in {output_dir}")
+    print(f"Created {name} claymorphism sprites in {output_dir}")
 
 
 if __name__ == "__main__":
     base_dir = Path(__file__).parent.parent / "resources" / "pets"
 
-    create_pet_sprites(base_dir / "cat", "cat", "orange", draw_cat)
-    create_pet_sprites(base_dir / "dog", "dog", "brown", draw_dog)
-    create_pet_sprites(base_dir / "default", "default", "blue", draw_cat)
+    create_pet_sprites(base_dir / "cat", "cat", draw_cat)
+    create_pet_sprites(base_dir / "dog", "dog", draw_dog)
+    create_pet_sprites(base_dir / "default", "default", draw_cat)
 
-    print("All anime-style pet sprites generated!")
+    print("All claymorphism-style pet sprites generated!")
