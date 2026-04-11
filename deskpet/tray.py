@@ -124,6 +124,14 @@ class TrayManager:
 
         self._menu.clear()
 
+        pets_menu = QMenu("Pets", self._menu)
+        for pet_type in self._pet_types:
+            pet_action = QAction(pet_type.title(), pets_menu)
+            pet_action.triggered.connect(lambda checked, pt=pet_type: self._switch_pet(pt))
+            pets_menu.addAction(pet_action)
+        self._menu.addMenu(pets_menu)
+        self._menu.addSeparator()
+
         behaviors = self._get_available_behaviors()
         if behaviors:
             actions_menu = QMenu("Actions", self._menu)
@@ -132,14 +140,6 @@ class TrayManager:
                 action.triggered.connect(lambda checked, b=behavior: self._send_command(b))
                 actions_menu.addAction(action)
             self._menu.addMenu(actions_menu)
-            self._menu.addSeparator()
-
-        pets_menu = QMenu("Pets", self._menu)
-        for pet_type in self._pet_types:
-            pet_action = QAction(pet_type.title(), pets_menu)
-            pet_action.triggered.connect(lambda checked, pt=pet_type: self._switch_pet(pt))
-            pets_menu.addAction(pet_action)
-        self._menu.addMenu(pets_menu)
 
         self._menu.addSeparator()
 
