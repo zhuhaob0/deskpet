@@ -44,7 +44,8 @@ class TransparentWindow(QWidget):
                 Qt.TransformationMode.SmoothTransformation,
             )
             self._label.setPixmap(scaled)
-            self.setMask(scaled.mask())
+            self.resize(scaled.size())
+            self.setMask(QRegion())
 
     @property
     def is_dragging(self) -> bool:

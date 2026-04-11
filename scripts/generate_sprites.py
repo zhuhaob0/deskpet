@@ -5,6 +5,17 @@ from PIL import Image, ImageDraw, ImageFilter
 import math
 
 
+def add_edge_feather(img: Image.Image, radius: int = 3) -> Image.Image:
+    """Add feather effect to edges for smooth transparency."""
+    if img.mode != "RGBA":
+        img = img.convert("RGBA")
+
+    alpha = img.split()[3]
+    blurred_alpha = alpha.filter(ImageFilter.GaussianBlur(radius=radius))
+    img.putalpha(blurred_alpha)
+    return img
+
+
 def create_shadow(color: tuple, offset: int = 3, blur: int = 5) -> Image.Image:
     """Create a soft shadow image."""
     size = 128 + blur * 2
@@ -345,6 +356,7 @@ def create_pet_sprites(output_dir: Path, name: str, draw_func) -> None:
 
             pet_color = colors.get(behavior, colors["idle"]) + (255,)
             draw_func(img, draw, frame, frame_count, pet_color, is_sleeping)
+            img = add_edge_feather(img, radius=2)
 
             filename = f"{behavior}_{frame:02d}.png"
             img.save(output_dir / filename)
