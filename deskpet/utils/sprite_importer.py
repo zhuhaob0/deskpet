@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 class SpriteImporter:
     TARGET_FPS = 30
+    CROP_MARGIN = 2
 
     def __init__(self, resource_dir: Path):
         self.resource_dir = resource_dir
@@ -50,9 +51,10 @@ class SpriteImporter:
                 for frame_idx in range(0, total_frames, frame_interval):
                     gif.seek(frame_idx)
 
-                    frame_rgb = gif.convert("RGBA")
+                    frame_rgba = gif.convert("RGBA")
+                    frame_cropped = self._crop_transparency(frame_rgba)
                     frame_path = output_dir / f"{action_name}_{saved_count:02d}.png"
-                    frame_rgb.save(frame_path, "PNG")
+                    frame_cropped.save(frame_path, "PNG")
                     saved_count += 1
 
                     logger.info(f"Extracted frame {saved_count}: {frame_path.name}")
@@ -83,10 +85,10 @@ class SpriteImporter:
 
                 if frame_idx % frame_interval == 0:
                     frame_rgba = cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA)
-
                     frame_pil = Image.fromarray(frame_rgba)
+                    frame_cropped = self._crop_transparency(frame_pil)
                     frame_path = output_dir / f"{action_name}_{saved_count:02d}.png"
-                    frame_pil.save(frame_path, "PNG")
+                    frame_cropped.save(frame_path, "PNG")
                     saved_count += 1
 
                     logger.info(f"Extracted frame {saved_count}: {frame_path.name}")
@@ -100,6 +102,20 @@ class SpriteImporter:
         except Exception as e:
             logger.error(f"Failed to import video: {e}")
             return False, f"Failed to import video: {e}"
+
+    def _crop_transparency(self, image: Image.Image) -> Image.Image:
+        bbox = image.getbbox()
+        if bbox is None:
+            return image
+
+        left, top, right, bottom = bbox
+        margin = self.CROP_MARGIN
+        left = max(0, left - margin)
+        top = max(0, top - margin)
+        right = min(image.width, right + margin)
+        bottom = min(image.height, bottom + margin)
+
+        return image.crop((left, top, right, bottom))
 
     def _prepare_output_dir(self, pet_name: str, action_name: str) -> Path:
         pet_name = pet_name.lower().strip().replace(" ", "_")
