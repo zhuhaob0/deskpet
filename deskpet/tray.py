@@ -29,6 +29,10 @@ def _is_gui_available():
     return True
 
 
+SELECTED_STYLE = "background-color: #4a90d9; color: white;"
+DEFAULT_STYLE = ""
+
+
 class TrayManager:
     def __init__(
         self,
@@ -47,6 +51,8 @@ class TrayManager:
         self._pet_types: list[str] = []
         self._on_switch_pet: Callable[[str], None] | None = None
         self._sprite_importer: "SpriteImporter | None" = None
+        self._current_pet: str = ""
+        self._current_behavior: str = "idle"
 
     @property
     def is_available(self) -> bool:
@@ -138,7 +144,9 @@ class TrayManager:
         pet_types = self._get_all_pet_types()
         pets_menu = QMenu("Pets", self._menu)
         for pet_type in pet_types:
-            pet_action = QAction(pet_type.title(), pets_menu)
+            is_selected = pet_type == self._current_pet
+            pet_action = QAction(("✓ " if is_selected else "") + pet_type.title(), pets_menu)
+            pet_action.setStyleSheet(SELECTED_STYLE if is_selected else DEFAULT_STYLE)
             pet_action.triggered.connect(lambda checked, pt=pet_type: self._switch_pet(pt))
             pets_menu.addAction(pet_action)
         self._menu.addMenu(pets_menu)
@@ -148,7 +156,9 @@ class TrayManager:
         if behaviors:
             actions_menu = QMenu("Actions", self._menu)
             for behavior in behaviors:
-                action = QAction(behavior.title(), actions_menu)
+                is_selected = behavior == self._current_behavior
+                action = QAction(("✓ " if is_selected else "") + behavior.title(), actions_menu)
+                action.setStyleSheet(SELECTED_STYLE if is_selected else DEFAULT_STYLE)
                 action.triggered.connect(lambda checked, b=behavior: self._send_command(b))
                 actions_menu.addAction(action)
             self._menu.addMenu(actions_menu)
@@ -171,6 +181,8 @@ class TrayManager:
         return self._pet_types
 
     def _get_available_behaviors(self) -> list[str]:
+        if self._sprite_importer and self._current_pet:
+            return self._sprite_importer.get_available_actions(self._current_pet)
         if self._pet_engine:
             return self._pet_engine.get_available_behaviors()
         return ["idle", "walk", "sleep", "eat", "play"]
@@ -195,6 +207,8 @@ class TrayManager:
 
         from deskpet.pet.engine import Behavior
 
+        self._current_behavior = behavior_name
+
         if behavior_name == "walk":
             logger.info("Sending walk command")
             self._pet_engine.command(Behavior.WALK, 0.0)
@@ -205,11 +219,28 @@ class TrayManager:
             logger.info(f"Sending {behavior_name} command, duration: {duration}")
             self._pet_engine.command(Behavior[behavior_name.upper()], duration)
             logger.info(f"{behavior_name} command sent successfully")
+        else:
+            logger.info(f"Sending {behavior_name} command")
+            try:
+                self._pet_engine.command(Behavior[behavior_name.upper()], 5.0)
+            except KeyError:
+                logger.warning(f"Unknown behavior: {behavior_name}")
 
     def _switch_pet(self, pet_type: str) -> None:
         logger.info(f"Switching to pet: {pet_type}")
+        self._current_pet = pet_type
+
         if self._on_switch_pet:
             self._on_switch_pet(pet_type)
+
+        behaviors = (
+            self._sprite_importer.get_available_actions(pet_type) if self._sprite_importer else []
+        )
+        if behaviors:
+            default_action = behaviors[0]
+            self._current_behavior = default_action
+            logger.info(f"Triggering default action for {pet_type}: {default_action}")
+            self._send_command(default_action)
 
     def _quit(self) -> None:
         logger.info("Quit requested from tray")
