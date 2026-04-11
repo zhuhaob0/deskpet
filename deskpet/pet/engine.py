@@ -28,15 +28,15 @@ class Behavior(Enum):
 
 @dataclass
 class BehaviorConfig:
-    idle_frames: int = 12
+    idle_frames: int = 16
     idle_fps: float = 6.0
-    walk_frames: int = 12
+    walk_frames: int = 16
     walk_fps: float = 10.0
-    sleep_frames: int = 6
+    sleep_frames: int = 8
     sleep_fps: float = 3.0
-    eat_frames: int = 12
+    eat_frames: int = 16
     eat_fps: float = 8.0
-    play_frames: int = 12
+    play_frames: int = 16
     play_fps: float = 10.0
     walk_speed: int = 3
     walk_duration: float = 5.0
