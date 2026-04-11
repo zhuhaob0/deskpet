@@ -11,6 +11,7 @@ from PyQt6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
 if TYPE_CHECKING:
     from deskpet.pet.engine import PetEngine
+    from deskpet.utils.sprite_importer import SpriteImporter
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +46,7 @@ class TrayManager:
         self._pet_engine: "PetEngine | None" = None
         self._pet_types: list[str] = []
         self._on_switch_pet: Callable[[str], None] | None = None
+        self._sprite_importer: "SpriteImporter | None" = None
 
     @property
     def is_available(self) -> bool:
@@ -55,6 +57,9 @@ class TrayManager:
 
     def set_on_switch_pet(self, callback: Callable[[str], None]) -> None:
         self._on_switch_pet = callback
+
+    def set_sprite_importer(self, importer: "SpriteImporter") -> None:
+        self._sprite_importer = importer
 
     def setup_menu(self, pet_types: list[str]) -> None:
         self._pet_types = pet_types
@@ -143,6 +148,12 @@ class TrayManager:
 
         self._menu.addSeparator()
 
+        import_action = QAction("Import Animation...", self._menu)
+        import_action.triggered.connect(self._open_import_dialog)
+        self._menu.addAction(import_action)
+
+        self._menu.addSeparator()
+
         quit_action = QAction("Quit", self._menu)
         quit_action.triggered.connect(self._quit)
         self._menu.addAction(quit_action)
@@ -151,6 +162,17 @@ class TrayManager:
         if self._pet_engine:
             return self._pet_engine.get_available_behaviors()
         return ["idle", "walk", "sleep", "eat", "play"]
+
+    def _open_import_dialog(self) -> None:
+        if not self._sprite_importer:
+            logger.warning("Sprite importer not set")
+            return
+
+        from deskpet.ui.import_dialog import ImportDialog
+
+        dialog = ImportDialog(self._sprite_importer)
+        if dialog.exec():
+            logger.info("Import dialog accepted, refreshing menu")
 
     def _send_command(self, behavior_name: str) -> None:
         logger.info(f"Command received: {behavior_name}")

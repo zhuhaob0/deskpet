@@ -196,6 +196,8 @@ class DeskPetApp:
             self.overlay = ConsoleOverlay(on_double_click=self._on_pet_double_click)
 
     def _setup_tray(self) -> None:
+        from deskpet.utils.sprite_importer import SpriteImporter
+
         icon_path = str(self.resource_dir / "pets" / "icon.png")
         self.tray = TrayManager(
             icon_path=icon_path,
@@ -203,6 +205,8 @@ class DeskPetApp:
             on_quit=self.quit,
             qapp=self._qapp,
         )
+        importer = SpriteImporter(self.resource_dir / "pets")
+        self.tray.set_sprite_importer(importer)
         self.tray.set_pet_engine(self.pet_engine)
         self.tray.set_on_switch_pet(self._switch_pet)
         self.tray.setup_menu(["cat", "dog", "default"])
