@@ -662,6 +662,9 @@ def create_pet_sprites(output_dir: Path, name: str, draw_func) -> None:
     colors = color_schemes.get(name, color_schemes["default"])
 
     for behavior, (frame_count, is_sleeping) in behaviors.items():
+        behavior_dir = output_dir / behavior
+        behavior_dir.mkdir(parents=True, exist_ok=True)
+
         for frame in range(frame_count):
             img = Image.new("RGBA", (view_width, view_height), (0, 0, 0, 0))
             draw = ImageDraw.Draw(img)
@@ -673,7 +676,7 @@ def create_pet_sprites(output_dir: Path, name: str, draw_func) -> None:
             img = add_edge_feather(img, radius=2)
 
             filename = f"{behavior}_{frame:02d}.png"
-            img.save(output_dir / filename)
+            img.save(behavior_dir / filename)
 
     icon_size = 32
     icon = Image.new("RGBA", (view_width, view_height), (0, 0, 0, 0))

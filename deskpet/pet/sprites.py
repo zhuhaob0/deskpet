@@ -14,12 +14,19 @@ class SpriteManager:
 
     def get_sprite(self, behavior: Behavior, frame: int = 0) -> str:
         behavior_name = behavior.name.lower()
-        sprite_path = self.sprite_dir / f"{behavior_name}_{frame:02d}.png"
+        sprite_path = self.sprite_dir / behavior_name / f"{behavior_name}_{frame:02d}.png"
         if sprite_path.exists():
             return str(sprite_path)
-        return str(self.sprite_dir / "idle_00.png")
+        sprite_path = self.sprite_dir / behavior_name / "idle_00.png"
+        if sprite_path.exists():
+            return str(sprite_path)
+        return str(self.sprite_dir / "idle" / "idle_00.png")
 
     def list_available(self) -> list[str]:
         if not self.sprite_dir.exists():
             return []
-        return [f.stem for f in self.sprite_dir.glob("*.png")]
+        behaviors = []
+        for item in self.sprite_dir.iterdir():
+            if item.is_dir():
+                behaviors.append(item.name)
+        return behaviors
